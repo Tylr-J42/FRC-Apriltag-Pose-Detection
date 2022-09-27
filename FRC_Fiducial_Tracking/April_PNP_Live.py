@@ -8,9 +8,11 @@ import time
 import cv2
 import apriltag
 import numpy as np
-import math
+from math import sqrt
+from math import pi
 from networktables import NetworkTables
 import argparse
+from threading import Thread
 
 
 # translation vector units to inches: tvec/71.22 this constant will differ
@@ -18,14 +20,8 @@ import argparse
 # in pixels and divide it by the real world distance
 TVEC2IN = 1/71.22
 # Rotational vector radians to degrees
-RAD2DEG = 180/math.pi
+RAD2DEG = 180/pi
 
-# RPi camera recording setup.
-#  For specs - https://www.raspberrypi.com/documentation/accessories/camera.html
-camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = 32
-rawCapture = PiRGBArray(camera, size=(640,480))
 
 # focal length in pixels. You can use Camera_Calibrate.py or calculate using a camera spec sheet for more accuracy
 # focal_length [mm] / imager_element_length [mm/pixel]
@@ -51,6 +47,48 @@ args = parser.parse_args()
 
 FPS = 0
 
+# class for allocating a thread to only updating the camera stream,
+# the other thread is used for detection processing
+class PiVid:
+
+    def __init__(self):
+        # RPi camera recording setup with threading crap.
+        #  For specs - https://www.raspberrypi.com/documentation/accessories/camera.html
+        self.camera = PiCamera()
+        self.camera.resolution = (640, 480)
+        self.camera.framerate = 60
+        self.rawCapture = PiRGBArray(self.camera, size=(640,480))
+        self.stream = self.camera.capture_continuous(self.rawCapture, format="bgr", use_video_port=True)
+
+        self.frame = None
+        self.stopped = False
+
+    # Start camera thread
+    def start(self):
+        Thread(target=self.update, args=()).start()
+        return self
+
+    # update camera stream threading
+    def update(self):
+        for frame in self.stream:
+            self.frame=frame.array
+            self.rawCapture.truncate(0)
+            if self.stopped:
+                self.stream.close()
+                self.rawCapture.close()
+                self.camera.close()
+                return
+
+    # output the frame we want
+    def read(self):
+        return self.frame
+
+    # end threading
+    def stop(self):
+        self.stopped = True
+
+cam = PiVid().start()
+
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
 
@@ -74,18 +112,22 @@ def display_features(image, imgpts):
     image = cv2.drawContours(image, [imgpts[4:]],-1,(0,0,255),3)
     return image
 
+# setting up apriltag detection. Make sure this is OUTSIDE the loop next time
+options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=16,
+quad_decimate=100.0, quad_blur=0.0, refine_edges=True,
+refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
+detector = apriltag.Detector()
+
+# main vision processing code
 time.sleep(0.1)
-for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+while True:
     frame_start = time.time()
-    image = frame.array
+    image = cam.read()
     data_array = []
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
-    quad_decimate=1.0, quad_blur=0.0, refine_edges=True,
-    refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
-    detector = apriltag.Detector()
+    
     output = detector.detect(tagFrame)
 
     for det in output:
@@ -104,7 +146,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         for i in range(0,len(rvecDeg)):
             rvecDeg[i] = float(rvecDeg[i][0])
 
-        totalDist = math.sqrt((tvecDist[0]**2)+(tvecDist[1]**2)+(tvecDist[2]**2))
+        totalDist = sqrt((tvecDist[0]**2)+(tvecDist[1]**2)+(tvecDist[2]**2))
 
         # only show display if you use --display for argparse
         if args.display:
@@ -135,10 +177,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         cv2.imshow("Frame", image)
 
     key = cv2.waitKey(1) & 0xFF
-    rawCapture.truncate(0)
     if key ==ord("q"):
         break
 
     # frame rate for performance
     FPS = (1/(time.time()-frame_start))
+    #print(FPS)
     vision_table.putNumber("FPS", FPS)
+
+cam.stop()
+cv2.destroyAllWindows()

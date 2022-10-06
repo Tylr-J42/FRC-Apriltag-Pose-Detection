@@ -37,14 +37,15 @@ objp = np.array([[0,0,0], [b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, 
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, -b], [-b/2, b/2, -b], [-b/2, -b/2, -b], [b/2, -b/2, -b]], dtype=np.float32)
 
-# put your RoboRio IP here
-NetworkTables.initialize(server="1234567890")
-vision_table = NetworkTables.getTable("Fiducial")
-
-# To show display of camera feed add --display in terminal when running script.
+# To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
 parser = argparse.ArgumentParser(description="Select display")
 parser.add_argument("--display", action='store_true', help="enable a display of the camera")
+parser.add_argument("--ip_add", type=str, required=True)
 args = parser.parse_args()
+
+# network tables + RoboRio IP
+NetworkTables.initialize(server=args.ip_add)
+vision_table = NetworkTables.getTable("Fiducial")
 
 FPS = 0
 
@@ -113,8 +114,7 @@ def display_features(image, imgpts, totalDist):
         image = cv2.line(image, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
     # draw top layer in red color
     image = cv2.drawContours(image, [imgpts[4:]],-1,(0,0,255),3)
-    # image = cv2.putText(image, str((round(tvecDist[0], 4), round(tvecDist[1], 4), round(tvecDist[2], 4))), (int(det.center[0])+100,int(det.center[1])+100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
-    # image = cv2.putText(image, str((round(rvecDeg[0], 4), round(rvecDeg[1], 4), round(rvecDeg[2], 4))), (int(det.center[0])+100,int(det.center[1])+100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
+    image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(round(totalDist, 4))+"in", (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
     return image
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
@@ -181,6 +181,7 @@ while True:
         if TARGET_ID == data_array[0]:
             target_detected = True
 
+    vision_table.putNumber("numberOfTags", len(data_array))
     vision_table.putBoolean("targetDetected", target_detected)
 
     #Showing image. use --display to show image

@@ -31,7 +31,7 @@ camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0., 308.94165115],
  [0., FOCAL_LEN_PIXELS, 221.9470321],
  [0., 0.,1.]])
 
-b=6.5
+b=7.15
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
 objp = np.array([[0,0,0], [b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0]], dtype=np.float32)
 # 2d axis array points for drawing cube overlay
@@ -118,7 +118,7 @@ def display_features(image, imgpts, totalDist):
     return image
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
-options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
+options = apriltag.DetectorOptions(families='tag16h5', border=1, nthreads=4,
 quad_decimate=2.0, quad_blur=0.0, refine_edges=True,
 refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
 detector = apriltag.Detector(options)

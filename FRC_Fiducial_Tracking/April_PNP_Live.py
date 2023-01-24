@@ -15,33 +15,44 @@ import argparse
 from threading import Thread
 
 
-# translation vector units to inches: tvec/71.22 this constant will differ
-# according to your camera. Space an apriltag at intervals, note the distance
-# in pixels and divide it by the real world distance
-TVEC2IN = 1
 # Rotational vector radians to degrees
 RAD2DEG = 180/pi
 
+# To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
+parser = argparse.ArgumentParser(description="Select display")
+parser.add_argument("--display", action='store_true', help="enable a display of the camera")
+parser.add_argument("--high_res", action='store_true', help="enable resolution 1088x720 vs 640x480")
+parser.add_argument("--ip_add", type=str, required=True)
+args = parser.parse_args()
 
-# focal length in pixels. You can use Camera_Calibrate.py or calculate using a camera spec sheet for more accuracy
+# focal length in pixels. You can use Camera_Calibrate.py and take at least 10 pics of a chess board or calculate using a camera spec sheet
 # focal_length [mm] / imager_element_length [mm/pixel]
-FOCAL_LEN_PIXELS = 528.6956522
+# 621.5827338
+FOCAL_LEN_PIXELS = 621.5827338
 # camera matrix from Calibrate_Camera.py.
 camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0., 308.94165115],
  [0., FOCAL_LEN_PIXELS, 221.9470321],
  [0., 0.,1.]])
 
-b=7.15
+# from Camera_Calibration.py
+dist = np.array([ 2.32929183e-01, -1.35534844e+00, -1.51912733e-03, -2.17960810e-03, 2.25537289e+00])
+ 
+camera_res = (640, 480)
+
+if args.high_res:
+    FOCAL_LEN_PIXELS = 991.5391539
+    camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0.00000000, 528.420369],
+    [0.00000000, FOCAL_LEN_PIXELS, 342.737594],
+    [0.00000000, 0.00000000, 1.00000000]])
+    dist = np.array([[ 2.52081760e-01, -1.34794418e+00,  1.24975695e-03, -7.77510823e-04,
+    2.29608398e+00]])
+    camera_res = (1088, 720)
+
+b=6
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
 objp = np.array([[0,0,0], [b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0]], dtype=np.float32)
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, -b], [-b/2, b/2, -b], [-b/2, -b/2, -b], [b/2, -b/2, -b]], dtype=np.float32)
-
-# To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
-parser = argparse.ArgumentParser(description="Select display")
-parser.add_argument("--display", action='store_true', help="enable a display of the camera")
-parser.add_argument("--ip_add", type=str, required=True)
-args = parser.parse_args()
 
 # network tables + RoboRio IP
 NetworkTables.initialize(server=args.ip_add)
@@ -59,9 +70,9 @@ class PiVid:
         # RPi camera recording setup with threading crap.
         #  For specs - https://www.raspberrypi.com/documentation/accessories/camera.html
         self.camera = PiCamera()
-        self.camera.resolution = (640, 480)
+        self.camera.resolution = camera_res
         self.camera.framerate = 60
-        self.rawCapture = PiRGBArray(self.camera, size=(640,480))
+        self.rawCapture = PiRGBArray(self.camera, size=camera_res)
         self.stream = self.camera.capture_continuous(self.rawCapture, format="bgr", use_video_port=True)
 
         self.frame = None
@@ -138,8 +149,7 @@ while True:
     for det in output:
         # points of the tag to be tracked
         tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
-        # from Camera_Calibration.py
-        dist = np.array([ 2.32929183e-01, -1.35534844e+00, -1.51912733e-03, -2.17960810e-03, 2.25537289e+00])
+
 
         ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, camera_matrix, dist, flags=0)
 

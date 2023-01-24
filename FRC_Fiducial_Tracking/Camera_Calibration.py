@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# credit: https://learnopencv.com/camera-calibration-using-opencv/
 
 import cv2
 import numpy as np
@@ -22,7 +21,7 @@ objp[0,:,:2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 prev_img_shape = None
 
 # Extracting path of individual image stored in a given directory
-images = glob.glob('/home/pi/Desktop/Fudicial_Stuff/FRC_Fiducial_Tracking/Calibration_Pics/*.jpg')
+images = glob.glob('/home/pi/Desktop/apriltag-pose-frc/FRC_Fiducial_Tracking/Calibration_Pics_640x480/*.jpg')
 for fname in images:
     img = cv2.imread(fname)
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)

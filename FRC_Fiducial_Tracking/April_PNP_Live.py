@@ -2,8 +2,6 @@
 # Made by Tyler Jacques FRC Team 2648
 # https://gitlab.coldlightalchemist.com/Tyler-J42/apriltag-pose-frc
 
-from picamera.array import PiRGBArray
-from picamera import PiCamera
 import time
 import cv2
 import apriltag
@@ -12,8 +10,8 @@ from math import sqrt
 from math import pi
 from networktables import NetworkTables
 import argparse
-from threading import Thread
 from TagObj import TagObj
+from PiVid import PiVid
 
 RAD2DEG = 180*pi
 
@@ -63,54 +61,17 @@ TARGET_ID = 1
 
 # 2023 Field Apriltag Coordinates index = tag id
 # format = [x, y, z, z-rotation] in inches
-tag_coords = [[1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
+tag_coords = [0, [1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
 [4, 636.96, 265.74, 27.38, 180], [5, 14.25, 265.74, 27.38, 0], [6, 40.45, 174.19, 18.22, 0], [7, 40.45, 108.19, 18.22, 0],
 [8, 40.45, 42.19, 18.22, 0]]
+
+# x,y,z,rx,ry,rx
+robo_space_pose = [0, 0, 0, 0, 0, 0]
 
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
 
-# class for allocating a thread to only updating the camera stream,
-# the other thread is used for detection processing
-class PiVid:
-
-    def __init__(self):
-        # RPi camera recording setup with threading crap.
-        #  For specs - https://www.raspberrypi.com/documentation/accessories/camera.html
-        self.camera = PiCamera()
-        self.camera.resolution = camera_res
-        self.camera.framerate = 60
-        self.rawCapture = PiRGBArray(self.camera, size=camera_res)
-        self.stream = self.camera.capture_continuous(self.rawCapture, format="bgr", use_video_port=True)
-
-        self.frame = None
-        self.stopped = False
-
-    # Start camera thread
-    def start(self):
-        Thread(target=self.update, args=()).start()
-        return self
-
-    # update camera stream threading
-    def update(self):
-        for frame in self.stream:
-            self.frame=frame.array
-            self.rawCapture.truncate(0)
-            if self.stopped:
-                self.stream.close()
-                self.rawCapture.close()
-                self.camera.close()
-                return
-
-    # output the frame we want
-    def read(self):
-        return self.frame
-
-    # end threading
-    def stop(self):
-        self.stopped = True
-
-cam = PiVid().start()
+cam = PiVid(camera_res).start()
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)

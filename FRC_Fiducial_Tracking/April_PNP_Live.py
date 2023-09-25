@@ -13,10 +13,9 @@ from math import pi
 from networktables import NetworkTables
 import argparse
 from threading import Thread
+from TagObj import TagObj
 
-
-# Rotational vector radians to degrees
-RAD2DEG = 180/pi
+RAD2DEG = 180*pi
 
 # To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
 parser = argparse.ArgumentParser(description="Select display")
@@ -63,10 +62,10 @@ FPS = 0
 TARGET_ID = 1
 
 # 2023 Field Apriltag Coordinates index = tag id
-# format = [x, y, z, z-rotation]
-tag_coords = [0, [610.77, 42.19, 18.22, 180], [610.77, 108.19, 18.22, 180], [610.77, 174.19, 18.22, 180],
-[636.96, 265.74, 27.38, 180], [14.25, 265.74, 27.38, 0], [40.45, 174.19, 18.22, 0], [40.45, 108.19, 18.22, 0],
-[40.45, 42.19, 18.22, 0]]
+# format = [x, y, z, z-rotation] in inches
+tag_coords = [[1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
+[4, 636.96, 265.74, 27.38, 180], [5, 14.25, 265.74, 27.38, 0], [6, 40.45, 174.19, 18.22, 0], [7, 40.45, 108.19, 18.22, 0],
+[8, 40.45, 42.19, 18.22, 0]]
 
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
@@ -149,6 +148,7 @@ while True:
     frame_start = time.time()
     image = cam.read()
     data_array = []
+    visible_tags = []
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -179,24 +179,21 @@ while True:
                 imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, camera_matrix, dist)
                 image = display_features(image, imgpts, totalDist)
 
-            data_array.append([det.tag_id, tvecDist, rvecDeg, totalDist])
+            data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
 
     for i in range(len(data_array)):
-        orderVal = 0
-        for d in range(len(data_array)):
-            if data_array[d][2]>data_array[i][2] and d!=i and output[d].tag_id==output[i].tag_id:
-                orderVal = ++orderVal
 
-        vision_table.putNumber("tag"+str(data_array[i][0])+"tvecX("+str(orderVal)+")", tvecDist[0])
-        vision_table.putNumber("tag"+str(data_array[i][0])+"tvecY("+str(orderVal)+")", tvecDist[1])
-        vision_table.putNumber("tag"+str(data_array[i][0])+"tvecZ("+str(orderVal)+")", tvecDist[2])
+        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecX", data_array[i].tvec_x)
+        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecY", data_array[i].tvec_y)
+        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecZ", data_array[i].tvec_z)
         
-        vision_table.putNumber("tag"+str(data_array[i][0])+"rvecX("+str(orderVal)+")", rvecDeg[0])
-        vision_table.putNumber("tag"+str(data_array[i][0])+"rvecY("+str(orderVal)+")", rvecDeg[1])
-        vision_table.putNumber("tag"+str(data_array[i][0])+"rvecZ("+str(orderVal)+")", rvecDeg[2])
+        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecX", data_array[i].rvec_x)
+        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecY", data_array[i].rvec_y)
+        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecZ", data_array[i].rvec_z)
 
+        visible_tags.append(data_array[i].tag_id)
 
-    vision_table.putNumber("numberOfTags", len(data_array))
+    vision_table.putNumberArray("visibleTags", visible_tags)
 
     #Showing image. use --display to show image
     if args.display:

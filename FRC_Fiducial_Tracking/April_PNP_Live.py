@@ -12,6 +12,7 @@ from networktables import NetworkTables
 import argparse
 from TagObj import TagObj
 from PiVid import PiVid
+from Pose_Estimation import PoseEstimation
 
 RAD2DEG = 180*pi
 
@@ -19,6 +20,7 @@ RAD2DEG = 180*pi
 parser = argparse.ArgumentParser(description="Select display")
 parser.add_argument("--display", action='store_true', help="enable a display of the camera")
 parser.add_argument("--high_res", action='store_true', help="enable resolution 1088x720 vs 640x480")
+parser.add_argument("--pose_estimation", action='store_true', help="estimate pose based on detected tags")
 parser.add_argument("--ip_add", type=str, required=True)
 args = parser.parse_args()
 
@@ -28,8 +30,8 @@ args = parser.parse_args()
 FOCAL_LEN_PIXELS = 621.5827338
 # camera matrix from Calibrate_Camera.py.
 camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0., 308.94165115],
- [0., FOCAL_LEN_PIXELS, 221.9470321],
- [0., 0.,1.]])
+    [0., FOCAL_LEN_PIXELS, 221.9470321],
+    [0., 0.,1.]])
 
 # from Camera_Calibration.py
 dist = np.array([ 2.32929183e-01, -1.35534844e+00, -1.51912733e-03, -2.17960810e-03, 2.25537289e+00])
@@ -57,10 +59,8 @@ vision_table = NetworkTables.getTable("Fiducial")
 
 FPS = 0
 
-TARGET_ID = 1
-
 # 2023 Field Apriltag Coordinates index = tag id
-# format = [x, y, z, z-rotation] in inches
+# format = [id, x, y, z, z-rotation] in inches
 tag_coords = [0, [1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
 [4, 636.96, 265.74, 27.38, 180], [5, 14.25, 265.74, 27.38, 0], [6, 40.45, 174.19, 18.22, 0], [7, 40.45, 108.19, 18.22, 0],
 [8, 40.45, 42.19, 18.22, 0]]
@@ -121,7 +121,6 @@ while True:
         if det[4]>40:
             # points of the tag to be tracked
             tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
-
 
             ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, camera_matrix, dist, flags=0)
 

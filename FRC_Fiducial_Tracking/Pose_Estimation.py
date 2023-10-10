@@ -36,16 +36,23 @@ class PoseEstimation:
             tag0Tvec = cam_pose_to_robot_tvec(self.data_array[0], self.robo_space_pose)
             tag1Tvec = cam_pose_to_robot_tvec(self.data_array[1], self.robo_space_pose)
 
-            tag0Coords = [self.tag_coords[self.data_array[0].tag_id][0], self.tag_coords[self.data_array[0].tag_id][2], self.tag_coords[self.data_array[0].tag_id][3]]
-            tag1Coords = [self.tag_coords[self.data_array[1].tag_id][0], self.tag_coords[self.data_array[1].tag_id][2], self.tag_coords[self.data_array[1].tag_id][3]]
+            tag0Coords = [self.tag_coords[self.data_array[0].tag_id][1], self.tag_coords[self.data_array[0].tag_id][2], self.tag_coords[self.data_array[0].tag_id][3]]
+            tag1Coords = [self.tag_coords[self.data_array[1].tag_id][1], self.tag_coords[self.data_array[1].tag_id][2], self.tag_coords[self.data_array[1].tag_id][3]]
             
             tag_line_dist = distance(tag0Coords[0], tag0Coords[1], tag1Coords[0], tag1Coords[1])
             tag0_cam_dist = math.hypot(tag0Tvec[0], tag0Tvec[2])
             tag1_cam_dist = math.hypot(tag1Tvec[0], tag1Tvec[2])
 
-            cam_angle = math.toDegrees(math.atan(tag0Tvec[0]/tag0Tvec[2])-math.atan(tag1Tvec[0]/tag1Tvec[2]))
+            tag_line_angle = slope_angle(tag0Coords[0], tag0Coords[1], tag1Coords[0], tag1Coords[1])
+
+            cam_angle = math.abs(math.toDegrees(math.atan(tag0Tvec[0]/tag0Tvec[2])-math.atan(tag1Tvec[0]/tag1Tvec[2])))
             tag0_angle = math.acos(((tag0_cam_dist**2) + (tag_line_dist**2) - (tag1_cam_dist**2)) / (2 * tag0_cam_dist * tag_line_dist))
             tag1_angle = 180-(cam_angle+tag0_angle)
+
+            robotXCoord = (math.toDegrees(math.cos(tag_line_angle + tag0_angle))*tag0_cam_dist) + tag0Coords[0] + self.robo_space_pose[0]
+            robotYCoord = (math.toDegrees(math.sin(tag_line_angle + tag0_angle))*tag0_cam_dist) + tag0Coords[1] + self.robo_space_pose[1]
+
+            coord_array = [robotXCoord, robotYCoord]
 
             tvecZCoord = math.hypot(tag0Tvec[0], tag0Tvec[1])
 

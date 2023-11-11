@@ -8,6 +8,7 @@ import apriltag
 import numpy as np
 from math import sqrt
 from math import pi
+import math
 from networktables import NetworkTables
 import argparse
 from TagObj import TagObj
@@ -49,24 +50,51 @@ if args.high_res:
 
 b=6.5
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
-objp = np.array([[0,0,0], [b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0]], dtype=np.float32)
+objp = np.array([[0,0,0], [-b/2, b/2, 0], [b/2, b/2, 0], [b/2, -b/2, 0], [-b/2, -b/2, 0]], dtype=np.float32)
 # 2d axis array points for drawing cube overlay
-axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, -b], [-b/2, b/2, -b], [-b/2, -b/2, -b], [b/2, -b/2, -b]], dtype=np.float32)
+axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
 
 # network tables + RoboRio IP
 NetworkTables.initialize(server=args.ip_add)
 vision_table = NetworkTables.getTable("Fiducial")
 
 FPS = 0
-
+        
 # 2023 Field Apriltag Coordinates index = tag id
 # format = [id, x, y, z, z-rotation] in inches
-tag_coords = [0, [1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
+tag_coords = [[0, 0, 0, 0, 0], [1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
 [4, 636.96, 265.74, 27.38, 180], [5, 14.25, 265.74, 27.38, 0], [6, 40.45, 174.19, 18.22, 0], [7, 40.45, 108.19, 18.22, 0],
 [8, 40.45, 42.19, 18.22, 0]]
 
 # x,y,z,rx,ry,rz
 robo_space_pose = [0, 0, 0, 0, 0, 0]
+
+def tag_corners(tag_coords):
+    corners = []
+
+    for i in range(len(tag_coords)):
+        x = tag_coords[i][1]
+        y = tag_coords[i][2]
+        z = tag_coords[i][3]
+        z_rotation = tag_coords[i][4]
+
+        coordinates = [[], [], [] ,[], []]
+
+        x_offset = (b/2)*math.cos(math.radians(z_rotation))
+        y_offset = (b/2)*math.sin(math.radians(z_rotation))
+        coordinates[0] = tag_coords[i][0]
+        coordinates[1] = [x-x_offset, y+y_offset, z+b/2]
+        coordinates[2] = [x+x_offset, y+y_offset, z+b/2]
+        coordinates[3] = [x+x_offset, y+y_offset, z-b/2]
+        coordinates[4] = [x-x_offset, y+y_offset, z-b/2]
+
+        corners.append(coordinates)
+
+    return corners
+
+field_tag_coords = tag_corners(tag_coords)
+
+print(str(tag_corners(tag_coords)[1]))
 
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
@@ -85,10 +113,10 @@ def display_features(image, imgpts, totalDist):
         f = i+1
         if f>3: f=0
         cv2.line(image, (int(det.corners[i][0]), int(det.corners[i][1])), (int(det.corners[f][0]), int(det.corners[f][1])), (0,0,255), 3)
-    
+
     imgpts = np.int32(imgpts).reshape(-1,2)
     # draw ground floor in green
-    image = cv2.drawContours(image, [imgpts[:4]],-1,(0,255,0),-3)
+    #image = cv2.drawContours(image, [imgpts[:4]],-1,(0,255,0),-3)
     # draw pillars in blue color
     for i,j in zip(range(4),range(4,8)):
         image = cv2.line(image, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
@@ -102,6 +130,8 @@ options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
 quad_decimate=2.0, quad_blur=0.0, refine_edges=True,
 refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
 detector = apriltag.Detector(options)
+
+pose_estimator = PoseEstimation(tag_coords, robo_space_pose)
 
 # main vision processing code
 time.sleep(0.1)
@@ -118,7 +148,7 @@ while True:
 
     for det in output:
         # if the confidence is less than 40% exclude the tag from being processed.
-        if det[4]>40:
+        if det[4]>30:
             # points of the tag to be tracked
             tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
 
@@ -140,6 +170,8 @@ while True:
                 image = display_features(image, imgpts, totalDist)
 
             data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
+
+    pose_estimator.update(data_array)
 
     for i in range(len(data_array)):
 

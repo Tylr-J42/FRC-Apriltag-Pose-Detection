@@ -19,19 +19,18 @@ class PoseEstimation:
             for i in self.visible_tags:
                 tagTvec = cam_pose_to_robot_tvec(self.data_array[i], self.robo_space_pose)
 
-                tvecXCoord = math.sqrt((tagTvec[2]**2) + (tagTvec[0]**2)) * math.cos(self.tag_coords[self.data_array[i].tag_id][4] - self.data_array[i].rvec_y - self.robot_space_pose[5]) - self.robo_space_pose[0]
-                tvecYCoord = math.sqrt((tagTvec[2]**2) + (tagTvec[1]**2)) * math.sin(90-self.data_array[i].rvec_x - self.robot_space_pose[3])
-                tvecZCoord = math.sqrt((tagTvec[2]**2) + (tagTvec[0]**2)) * math.sin(self.tag_coords[self.data_array[i].tag_id][4] - self.data_array[i].rvec_y - self.robot_space_pose[5]) - self.robo_space_pose[2]
+                tvecXCoord = math.hypot(tagTvec[2], tagTvec[0]) * math.toDegrees(math.cos(self.tag_coords[self.data_array[i].tag_id][4] - self.data_array[i].rvec_y - self.robot_space_pose[5])) - self.robo_space_pose[0]
+                tvecYCoord = math.hypot(tagTvec[2], tagTvec[1]) * math.toDegrees(math.sin(90-self.data_array[i].rvec_x - self.robot_space_pose[3]))
+                tvecZCoord = math.hypot(tagTvec[2], tagTvec[0]) * math.toDegrees(math.sin(self.tag_coords[self.data_array[i].tag_id][4] - self.data_array[i].rvec_y - self.robot_space_pose[5])) - self.robo_space_pose[2]
 
                 self.coordinates = [self.data_array[i].tag_id, tvecXCoord, tvecYCoord, tvecZCoord]
-                coord_array.append(self.coordinates)
 
                 rvecPitch = -self.data_array[i].rvec_z-self.robot_space_pose[3]
                 rvecRoll = -self.data_array[i].rvec_x-self.robot_space_pose[4]
                 rvecYaw = self.tag_coords[self.data_array[i].tag_id][4]-self.data_array[i].rvec_y-self.robot_space_pose[5]
         
                 self.orientation = [self.data_array[i].tag_id, rvecPitch, rvecRoll, rvecYaw]
-                coord_array.append(self.orientation)
+                coord_array.append([self.coordinates, self.orientation])
         elif(len(self.visible_tags) == 2):
             tag0Tvec = cam_pose_to_robot_tvec(self.data_array[0], self.robo_space_pose)
             tag1Tvec = cam_pose_to_robot_tvec(self.data_array[1], self.robo_space_pose)

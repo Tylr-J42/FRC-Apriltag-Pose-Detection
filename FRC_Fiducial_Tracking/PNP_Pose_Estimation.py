@@ -1,7 +1,7 @@
 import math
 import cv2
 
-class PNP_Pose:
+class PNPPose:
 
     def __init__(self, tag_corners, robo_space_pose, camera_matrix, dist):
         self.tag_corners = tag_corners
@@ -17,6 +17,6 @@ class PNP_Pose:
         for i in range(len(tags_detected)):
             PNP_obj_input.append([tag_corners[tags_detected[i]][1], tag_corners[tags_detected[i]][2], tag_corners[tags_detected[i]][3]])
             
-        ret, rvecs, tvecs = cv2.solvePnP(PNP_obj_input, image_corners, self.camera_matrix, self.dist)
+        ret, rvecs, tvecs = cv2.solvePnP(PNP_obj_input, image_corners, self.camera_matrix, self.dist, flags=0)
         
-
+        print(tvecs)

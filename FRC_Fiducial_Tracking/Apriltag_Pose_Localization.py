@@ -13,6 +13,7 @@ from networktables import NetworkTables
 import argparse
 from TagObj import TagObj
 from PiVid import PiVid
+from PNP_Pose_Estimation import PNPPose
 
 RAD2DEG = 180*pi
 
@@ -130,13 +131,15 @@ quad_decimate=2.0, quad_blur=0.0, refine_edges=True,
 refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
 detector = apriltag.Detector(options)
 
+pose_estimator = PNPPose(field_tag_coords, robo_space_pose, camera_matrix, dist)
+
 # main vision processing code
 time.sleep(0.1)
 while True:
     frame_start = time.time()
     image = cam.read()
-    data_array = []
-    visible_tags = []
+    image_corners = []
+    tags_detected = []
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -149,38 +152,14 @@ while True:
             # points of the tag to be tracked
             tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
 
-            ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, camera_matrix, dist, flags=0)
-
-            # making translation and rotation vectors into a format good for networktables
-            tvecDist = tvecs.tolist()
-            rvecDeg = (rvecs*RAD2DEG).tolist()
-            for i in range(0,len(tvecDist)):
-                tvecDist[i] = float(tvecDist[i][0])
-            for i in range(0,len(rvecDeg)):
-                rvecDeg[i] = float(rvecDeg[i][0])
-
-            totalDist = sqrt((tvecDist[0]**2)+(tvecDist[1]**2)+(tvecDist[2]**2))
+            image_corners.append(det.corners)
+            tags_detected.append(det.id)
 
             # only show display if you use --display for argparse
             if args.display:
+                ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, camera_matrix, dist, flags=0)
                 imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, camera_matrix, dist)
-                image = display_features(image, imgpts, totalDist)
-
-            data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
-
-    for i in range(len(data_array)):
-
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecX", data_array[i].tvec_x)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecY", data_array[i].tvec_y)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecZ", data_array[i].tvec_z)
-        
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecX", data_array[i].rvec_x)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecY", data_array[i].rvec_y)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecZ", data_array[i].rvec_z)
-
-        visible_tags.append(data_array[i].tag_id)
-
-    vision_table.putNumberArray("visibleTags", visible_tags)
+                image = display_features(image, imgpts)
 
     #Showing image. use --display to show image
     if args.display:

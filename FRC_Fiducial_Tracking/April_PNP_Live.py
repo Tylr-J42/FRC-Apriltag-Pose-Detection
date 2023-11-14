@@ -93,8 +93,6 @@ def tag_corners(tag_coords):
 
 field_tag_coords = tag_corners(tag_coords)
 
-print(str(tag_corners(tag_coords)[1]))
-
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
 

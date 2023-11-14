@@ -62,7 +62,7 @@ FPS = 0
         
 # 2023 Field Apriltag Coordinates index = tag id
 # format = [id, x, y, z, z-rotation] in inches
-tag_coords = [[0, 0, 0, 0, 0], [1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
+tag_coords = [[0, 69.0, 420.0, 69.0, 0.0], [1, 610.77, 42.19, 18.22, 180], [2, 610.77, 108.19, 18.22, 180], [3, 610.77, 174.19, 18.22, 180],
 [4, 636.96, 265.74, 27.38, 180], [5, 14.25, 265.74, 27.38, 0], [6, 40.45, 174.19, 18.22, 0], [7, 40.45, 108.19, 18.22, 0],
 [8, 40.45, 42.19, 18.22, 0]]
 
@@ -88,13 +88,10 @@ def tag_corners(tag_coords):
         coordinates[3] = [x+x_offset, y+y_offset, z-b/2]
         coordinates[4] = [x-x_offset, y+y_offset, z-b/2]
 
-        corners.append(coordinates)
-
+        corners = corners + [coordinates]
     return corners
 
 field_tag_coords = tag_corners(tag_coords)
-
-print(str(tag_corners(tag_coords)[1]))
 
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
@@ -107,7 +104,7 @@ def connectionListener(connected, info):
 NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
 # create overlay on camera feed
-def display_features(image, imgpts, totalDist):
+def display_features(image, imgpts):
     # making red lines around fiducial
     for i in range(0,4):
         f = i+1
@@ -122,7 +119,7 @@ def display_features(image, imgpts, totalDist):
         image = cv2.line(image, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
     # draw top layer in red color
     image = cv2.drawContours(image, [imgpts[4:]],-1,(0,0,255),3)
-    image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(round(totalDist, 4))+"in", (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
+    image = cv2.putText(image, "#"+str(det.tag_id)+", "+"in", (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
     return image
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
@@ -138,7 +135,7 @@ time.sleep(0.1)
 while True:
     frame_start = time.time()
     image = cam.read()
-    image_corners = []
+    image_corners = np.array([])
     tags_detected = []
 
     #detecting april tags
@@ -150,16 +147,19 @@ while True:
         # if the confidence is less than 30% exclude the tag from being processed.
         if det[4]>30:
             # points of the tag to be tracked
-            tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
-
-            image_corners.append(det.corners)
-            tags_detected.append(det.id)
+            image_corners = list(image_corners)
+            image_corners.append(list(det.corners))
+            image_corners = np.array(image_corners[0])
+            tags_detected.append(det.tag_id)
 
             # only show display if you use --display for argparse
             if args.display:
+                tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
                 ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, camera_matrix, dist, flags=0)
                 imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, camera_matrix, dist)
                 image = display_features(image, imgpts)
+
+    pose_coords = pose_estimator.calculate_coords(image_corners, tags_detected)
 
     #Showing image. use --display to show image
     if args.display:

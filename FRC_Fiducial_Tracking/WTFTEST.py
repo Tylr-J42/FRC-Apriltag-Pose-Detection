@@ -45,14 +45,7 @@ def tag_corners(tag_coords):
     return corners
 
 field_tag_coords = tag_corners(tag_coords)
-robo_space_pose = [0, 0, 0, 0, 0, 0]
 
 pose_estimator = PNPPose(field_tag_coords, robo_space_pose, camera_matrix, dist)
 
-pose_estimator.calculate_coords( np.array([[ 65.75, 420.,    72.25],
- [ 72.25, 420.,    72.25],
- [ 72.25, 420.,    65.75],
- [ 65.75, 420.,    65.75]]), np.array([[398.38015747, 154.20915222],
- [260.04067993, 150.67947388],
- [212.12528992 , 77.55628204],
- [387.06124878,  77.81692505]]))
+pose_estimator.calculate_coords(np.array([[341.3, 157.0], [220.99, 152.41], [140.93 , 83.28], [284.02,  81.93]]), np.array([0]))

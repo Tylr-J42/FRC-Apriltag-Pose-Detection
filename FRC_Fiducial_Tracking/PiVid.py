@@ -12,6 +12,7 @@ class PiVid:
         self.camera = PiCamera()
         self.camera.resolution = camera_res
         self.camera.framerate = 60
+        self.camera.rotation = 180
         self.rawCapture = PiRGBArray(self.camera, size=camera_res)
         self.stream = self.camera.capture_continuous(self.rawCapture, format="bgr", use_video_port=True)
 

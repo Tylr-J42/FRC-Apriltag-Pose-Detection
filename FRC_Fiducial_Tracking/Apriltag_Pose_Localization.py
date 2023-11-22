@@ -83,6 +83,7 @@ def tag_corners(tag_coords):
         x_offset = (b/2)*math.cos(math.radians(z_rotation))
         y_offset = (b/2)*math.sin(math.radians(z_rotation))
         coordinates[0] = tag_coords[i][0]
+        
         coordinates[1] = [x-x_offset, y+y_offset, z+b/2]
         coordinates[2] = [x+x_offset, y+y_offset, z+b/2]
         coordinates[3] = [x+x_offset, y+y_offset, z-b/2]
@@ -140,7 +141,7 @@ while True:
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
+
     output = detector.detect(tagFrame)
 
     for det in output:

@@ -21,7 +21,6 @@ class PNPPose:
             else: 
                 PNP_obj_input = np.stack([PNP_obj_input, np.array([tag_corners[tags_detected[i]][1], tag_corners[tags_detected[i]][2], tag_corners[tags_detected[i]][3], tag_corners[tags_detected[i]][4]])])
 
-        image_corners = image_corners.astype("float")
 
         print("PNP_obj_input: ", PNP_obj_input, ", image_corners: ", image_corners, "tags_detected: ", tags_detected)
         ret, rvecs, tvecs = cv2.solvePnP(PNP_obj_input, image_corners, self.camera_matrix, self.dist, flags=0)

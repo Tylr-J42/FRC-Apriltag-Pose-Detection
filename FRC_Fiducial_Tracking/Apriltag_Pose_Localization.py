@@ -159,7 +159,8 @@ while True:
                 imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, camera_matrix, dist)
                 image = display_features(image, imgpts)
 
-    pose_coords = pose_estimator.calculate_coords(image_corners, tags_detected)
+    if(len(tags_detected) > 0):
+        pose_coords = pose_estimator.calculate_coords(image_corners, tags_detected)
 
     #Showing image. use --display to show image
     if args.display:

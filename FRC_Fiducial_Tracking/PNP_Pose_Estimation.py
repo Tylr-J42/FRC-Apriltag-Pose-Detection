@@ -11,24 +11,15 @@ class PNPPose:
         self.orientation = [0, 0, 0]
         self.robo_space_pose = robo_space_pose
     
-    def axisToEuler(self, rvecs):
-        R = cv2.Rodrigues(rvecs)
-
-        sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
- 
-        singular = sy < 1e-6
-
-        if  not singular :
-            x = math.atan2(R[2,1] , R[2,2])
-            y = math.atan2(-R[2,0], sy)
-            z = math.atan2(R[1,0], R[0,0])
-        else :
-            x = math.atan2(-R[1,2], R[1,1])
-            y = math.atan2(-R[2,0], sy)
-            z = 0
+    def rot_params_rv(self, rvecs):
+        from math import pi,atan2,asin
+        R = cv2.Rodrigues(rvecs)[0]
+        roll = 180*atan2(-R[2][1], R[2][2])/pi
+        pitch = 180*asin(R[2][0])/pi
+        yaw = 180*atan2(-R[1][0], R[0][0])/pi
+        rot_params= [roll,pitch,yaw]
+        return rot_params
         
-
-
     def calculate_coords(self, image_corners, tags_detected):
         tag_corners = self.tag_corners
         PNP_obj_input = np.array([])

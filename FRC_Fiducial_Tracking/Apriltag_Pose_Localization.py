@@ -66,6 +66,8 @@ tag_coords = [[0, 0.0, 0.0, 0.0, 0.0], [1, 610.77, 42.19, 18.22, 180], [2, 610.7
 [4, 636.96, 265.74, 27.38, 180], [5, 14.25, 265.74, 27.38, 0], [6, 40.45, 174.19, 18.22, 0], [7, 40.45, 108.19, 18.22, 0],
 [8, 40.45, 42.19, 18.22, 0]]
 
+testing_tags = [[0, 0.0, 0.0, 0.0, 0.0], [1, 12.0, 0.0, 0.0, 0.0], [2, -12.0, 0.0, 0.0, 0.0]]
+
 # x,y,z,rx,ry,rz
 robo_space_pose = [0, 0, 0, 0, 0, 0]
 
@@ -76,23 +78,24 @@ def tag_corners(tag_coords):
         x = tag_coords[i][1]
         y = tag_coords[i][2]
         z = tag_coords[i][3]
-        z_rotation = tag_coords[i][4]
+        y_rotation = tag_coords[i][4]
 
         coordinates = [[], [], [] ,[], []]
 
-        x_offset = (b/2)*math.cos(math.radians(z_rotation))
-        y_offset = (b/2)*math.sin(math.radians(z_rotation))
+        x_offset = (b/2)*math.cos(math.radians(y_rotation))
+        z_offset = (b/2)*math.sin(math.radians(y_rotation))
         coordinates[0] = tag_coords[i][0]
         
-        coordinates[1] = [x-x_offset, y+y_offset, z+b/2]
-        coordinates[2] = [x+x_offset, y+y_offset, z+b/2]
-        coordinates[3] = [x+x_offset, y+y_offset, z-b/2]
-        coordinates[4] = [x-x_offset, y+y_offset, z-b/2]
+        coordinates[1] = [x-x_offset, y+b/2, z+z_offset]
+        coordinates[2] = [x+x_offset, y+b/2, z+z_offset]
+        coordinates[3] = [x+x_offset, y-b/2, z+z_offset]
+        coordinates[4] = [x-x_offset, y-b/2, z+z_offset]
 
         corners = corners + [coordinates]
     return corners
 
-field_tag_coords = tag_corners(tag_coords)
+#field_tag_coords = tag_corners(tag_coords)
+testing_tag_coords = tag_corners(testing_tags)
 
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
@@ -125,11 +128,11 @@ def display_features(image, imgpts):
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
 options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
-quad_decimate=2.0, quad_blur=0.0, refine_edges=True,
+quad_decimate=1.0, quad_blur=0.0, refine_edges=True,
 refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
 detector = apriltag.Detector(options)
 
-pose_estimator = PNPPose(field_tag_coords, robo_space_pose, camera_matrix, dist)
+pose_estimator = PNPPose(testing_tag_coords, robo_space_pose, camera_matrix, dist)
 
 # main vision processing code
 time.sleep(0.1)
@@ -149,8 +152,8 @@ while True:
         if det[4]>30:
             # points of the tag to be tracked
             image_corners = list(image_corners)
-            image_corners.append(list(det.corners))
-            image_corners = np.array(image_corners[0])
+            image_corners = image_corners+(list(det.corners))
+            image_corners = np.array(image_corners)
             tags_detected.append(det.tag_id)
 
             # only show display if you use --display for argparse

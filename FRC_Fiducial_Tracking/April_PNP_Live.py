@@ -12,7 +12,8 @@ import math
 from networktables import NetworkTables
 import argparse
 from TagObj import TagObj
-from PiVid import PiVid
+#from PiVid import PiVid
+from Picam2Vid import Picam2Vid
 
 RAD2DEG = 180*pi
 
@@ -96,7 +97,7 @@ field_tag_coords = tag_corners(tag_coords)
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
 
-cam = PiVid(camera_res).start()
+cam = Picam2Vid(camera_res)
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)

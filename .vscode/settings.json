@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
         "./FRC_Fiducial_Tracking"
-    ]
+    ],
+    "python.analysis.autoImportCompletions": true
 }

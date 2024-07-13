@@ -11,6 +11,7 @@ from math import pi
 import math
 from networktables import NetworkTables
 import argparse
+
 from TagObj import TagObj
 #from PiVid import PiVid
 from Picam2Vid import Picam2Vid
@@ -21,6 +22,7 @@ RAD2DEG = 180*pi
 parser = argparse.ArgumentParser(description="Select display")
 parser.add_argument("--display", action='store_true', help="enable a display of the camera")
 parser.add_argument("--high_res", action='store_true', help="enable resolution 1088x720 vs 640x480")
+parser.add_argument("--wide_low", action='store_true', help="estimate with wide pi 3 camera 640x480")
 parser.add_argument("--pose_estimation", action='store_true', help="estimate pose based on detected tags")
 parser.add_argument("--ip_add", type=str, required=True)
 args = parser.parse_args()
@@ -49,7 +51,13 @@ if args.high_res:
     camera_res = (1088, 720)
 
 if args.wide_low:
-    FOCAL_LEN_PIXELS
+    FOCAL_LEN_PIXELS = (2.75/(6.45/640))
+    camera_matrix = np.array([[FOCAL_LEN_PIXELS,   0.,         323.59646261],
+    [  0.,         FOCAL_LEN_PIXELS, 229.56706391],
+    [  0.,           0.,           1.        ]])
+    
+    dist = np.array([[-0.02760058, -0.01336192, -0.00662915,  0.00432453,  0.23444395]])
+    camera_res = (640, 480)
 
 b=6.5
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
@@ -128,7 +136,7 @@ def display_features(image, imgpts, totalDist):
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
 options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
-quad_decimate=2.0, quad_blur=0.0, refine_edges=True,
+quad_decimate=1.0, quad_blur=0.0, refine_edges=True,
 refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
 detector = apriltag.Detector(options)
 

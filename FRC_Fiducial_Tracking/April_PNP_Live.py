@@ -48,6 +48,9 @@ if args.high_res:
     2.29608398e+00]])
     camera_res = (1088, 720)
 
+if args.wide_low:
+    FOCAL_LEN_PIXELS
+
 b=6.5
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
 objp = np.array([[0,0,0], [-b/2, b/2, 0], [b/2, b/2, 0], [b/2, -b/2, 0], [-b/2, -b/2, 0]], dtype=np.float32)

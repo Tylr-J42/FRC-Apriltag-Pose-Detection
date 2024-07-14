@@ -4,8 +4,9 @@ import os
 
 stream = Picam2Vid((640, 480))
 
-path = "/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Calibration_Pics_Wide_640x480/"
+path = "/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/"
 
+stream.update()
 frame = stream.read()
 cv2.imshow("frame", frame)
 cv2.waitKey(1)

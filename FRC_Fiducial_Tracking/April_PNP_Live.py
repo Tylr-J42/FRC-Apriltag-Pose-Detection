@@ -135,7 +135,7 @@ def display_features(image, imgpts, totalDist):
     return image
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
-options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
+options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=1,
 quad_decimate=1.0, quad_blur=0.0, refine_edges=True,
 refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
 detector = apriltag.Detector(options)
@@ -144,6 +144,7 @@ detector = apriltag.Detector(options)
 time.sleep(0.1)
 while True:
     frame_start = time.time()
+    cam.update()
     image = cam.read()
     data_array = []
     visible_tags = []
@@ -197,9 +198,7 @@ while True:
         image = cv2.putText(image, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
         cv2.imshow("Frame", image)
 
-    key = cv2.waitKey(1) & 0xFF
-    if key ==ord("q"):
-        break
+        key = cv2.waitKey(1)
 
     # frame rate for performance
     FPS = (1/(time.time()-frame_start))

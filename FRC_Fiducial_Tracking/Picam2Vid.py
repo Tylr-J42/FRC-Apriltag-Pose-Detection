@@ -12,6 +12,7 @@ class Picam2Vid:
         self.camera = Picamera2()
         self.resolution = camera_res
         config = self.camera.create_video_configuration(main={"size": self.resolution, "format": "RGB888"}, transform=Transform(hflip=True), lores={"size": (640,480)}, encode='main')
+        #config = self.camera.create_video_configuration(raw={"size":camera_res})
         self.camera.configure(config)
         self.camera.set_controls({"FrameRate": 120})
         self.frame = None
@@ -19,13 +20,15 @@ class Picam2Vid:
         self.camera.start()
 
     # output the frame we want
-    def read(self):
-        self.frame=self.camera.capture_array()
+    def update(self):
         if self.stopped:
             self.camera.stop()
             return
+        self.frame=self.camera.capture_array('main')
+        #print("debug threading")
+    
+    def read(self):
         return self.frame
 
-    # end threading
     def stop(self):
         self.stopped = True

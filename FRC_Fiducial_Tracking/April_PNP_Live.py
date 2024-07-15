@@ -136,8 +136,8 @@ def display_features(image, imgpts, totalDist):
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
 options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=1,
-quad_decimate=1.0, quad_blur=0.0, refine_edges=True,
-refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
+quad_decimate=2.0, quad_blur=0.0, refine_edges=True,
+refine_decode=False, refine_pose=False, debug=True, quad_contours=True)
 detector = apriltag.Detector(options)
 
 # main vision processing code
@@ -153,6 +153,7 @@ while True:
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     output = detector.detect(tagFrame)
+    print(output)
 
     for det in output:
         # if the confidence is less than 30% exclude the tag from being processed.

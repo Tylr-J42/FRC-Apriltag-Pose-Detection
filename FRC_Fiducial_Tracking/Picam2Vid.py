@@ -11,7 +11,7 @@ class Picam2Vid:
         #  For specs - https://www.raspberrypi.com/documentation/accessories/camera.html
         self.camera = Picamera2()
         self.resolution = camera_res
-        config = self.camera.create_video_configuration(main={"size": self.resolution, "format": "RGB888"}, transform=Transform(hflip=True), lores={"size": (640,480)}, encode='main')
+        config = self.camera.create_video_configuration(main={"size": self.resolution}, transform=Transform(hflip=True), lores={"size": (640,480)}, encode='main')
         #config = self.camera.create_video_configuration(raw={"size":camera_res})
         self.camera.configure(config)
         self.camera.set_controls({"FrameRate": 120})

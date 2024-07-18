@@ -4,7 +4,7 @@
 
 import time
 import cv2
-import apriltag
+import dt_apriltags
 import numpy as np
 from math import sqrt
 from math import pi

@@ -1,0 +1,4 @@
+numpy==1.24.2
+picamera==1.13
+picamera2==0.3.19
+pynetworktables==2021.0.0

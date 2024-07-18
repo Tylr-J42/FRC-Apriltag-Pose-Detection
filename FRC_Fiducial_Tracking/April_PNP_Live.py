@@ -51,13 +51,13 @@ if args.high_res:
     camera_res = (1088, 720)
 
 if args.wide_low:
-    FOCAL_LEN_PIXELS = (2.75/(6.45/640))
-    camera_matrix = np.array([[FOCAL_LEN_PIXELS,   0.,         323.59646261],
-    [  0.,         FOCAL_LEN_PIXELS, 229.56706391],
+    FOCAL_LEN_PIXELS = 976.16482142
+    camera_matrix = np.array([[FOCAL_LEN_PIXELS,   0.,         771.05155174],
+    [  0.,         FOCAL_LEN_PIXELS, 408.52081949],
     [  0.,           0.,           1.        ]])
     
-    dist = np.array([[-0.02760058, -0.01336192, -0.00662915,  0.00432453,  0.23444395]])
-    camera_res = (640, 480)
+    dist = np.array([[-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.03875398]])
+    camera_res = (1536, 864)
 
 b=6.5
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect

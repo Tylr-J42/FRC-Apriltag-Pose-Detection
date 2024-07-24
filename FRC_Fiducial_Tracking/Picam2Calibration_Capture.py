@@ -9,9 +9,10 @@ path = "/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/St
 stream.update()
 frame = stream.read()
 cv2.imshow("frame", frame)
-cv2.waitKey(2)
+cv2.waitKey(1)
 confirmation = input("keep y or n: ")
+print(frame)
 if confirmation == "y":
     file_order = len(os.listdir(path))
-    cv2.imwrite(path+str(file_order)+".png", frame)
+    cv2.imwrite(path+str(file_order)+".jpg", frame)
 stream.stop()

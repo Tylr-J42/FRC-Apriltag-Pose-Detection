@@ -17,9 +17,10 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        quad_sigma=0.0,
                        refine_edges=1,
                        decode_sharpening=0.25,
-                       debug=0)
+                       debug=1)
 
-image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/13.jpg")
+image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/14.jpg")
+#image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/20240814_043333.jpg")
 
 #h,  w = image.shape[:2]
 #newcameramtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist, (w,h), 1, (w,h))

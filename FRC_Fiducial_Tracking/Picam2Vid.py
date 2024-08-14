@@ -1,6 +1,5 @@
 from picamera2 import Picamera2
 from libcamera import Transform
-from threading import Thread
 
 # class for allocating a thread to only updating the camera stream,
 # the other thread is used for detection processing
@@ -11,10 +10,10 @@ class Picam2Vid:
         #  For specs - https://www.raspberrypi.com/documentation/accessories/camera.html
         self.camera = Picamera2()
         self.resolution = camera_res
-        config = self.camera.create_still_configuration(main={"size": self.resolution}, transform=Transform(hflip=True), lores={"size": (640,480)}, encode='main')
+        config = self.camera.create_video_configuration(main={"format": "XRGB8888", "size": self.resolution}, transform=Transform(hflip=True))
         #config = self.camera.create_video_configuration(raw={"size":camera_res})
         self.camera.configure(config)
-        self.camera.set_controls({"FrameRate": 120})
+        #self.camera.set_controls({"FrameRate": 120})
         self.frame = None
         self.stopped = False
         self.camera.start()

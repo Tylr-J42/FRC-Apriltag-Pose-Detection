@@ -17,27 +17,27 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        quad_sigma=0.0,
                        refine_edges=1,
                        decode_sharpening=0.25,
-                       debug=1)
+                       debug=0)
 
-image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/7.png")
+image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/13.jpg")
 
-h,  w = image.shape[:2]
-newcameramtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist, (w,h), 1, (w,h))
+#h,  w = image.shape[:2]
+#newcameramtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist, (w,h), 1, (w,h))
 
 # undistort
-dst = cv2.undistort(image, camera_matrix, dist, None, newcameramtx)
+#dst = cv2.undistort(image, camera_matrix, dist, None, newcameramtx)
  
 # crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
+#x, y, w, h = roi
+#dst = dst[y:y+h, x:x+w]
 
-dst = cv2.cvtColor(dst, cv2.COLOR_BGR2GRAY)
+grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-print(dst)
+print(grey)
 
-cv2.imshow("frame", dst)
-cv2.waitKey(1)
+cv2.imshow("frame", grey)
+cv2.waitKey(0)
 
-output = detector.detect(dst, estimate_tag_pose=False, camera_params=None, tag_size=None)
+output = detector.detect(grey, estimate_tag_pose=False, camera_params=None, tag_size=None)
 
 print(output)

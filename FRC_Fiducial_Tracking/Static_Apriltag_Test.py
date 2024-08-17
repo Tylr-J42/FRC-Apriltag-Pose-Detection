@@ -13,13 +13,14 @@ dist = np.array([[-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.0387539
 detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        families='tag36h11',
                        nthreads=2,
-                       quad_decimate=1.0,
-                       quad_sigma=0.0,
-                       refine_edges=1,
-                       decode_sharpening=0.25,
+                       quad_decimate=8.5,
+                       quad_sigma=0.5,
+                       refine_edges=3,
+                       decode_sharpening=0,
                        debug=1)
 
-image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/14.jpg")
+#image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/apriltagrobots_overlay.jpg")
+image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/13.jpg")
 #image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/20240814_043333.jpg")
 
 #h,  w = image.shape[:2]

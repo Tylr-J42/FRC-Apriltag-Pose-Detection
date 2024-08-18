@@ -13,14 +13,14 @@ dist = np.array([[-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.0387539
 detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        families='tag36h11',
                        nthreads=2,
-                       quad_decimate=8.5,
-                       quad_sigma=0.5,
+                       quad_decimate=2,
+                       quad_sigma=1,
                        refine_edges=3,
-                       decode_sharpening=0,
+                       decode_sharpening=0.25,
                        debug=1)
 
 #image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/apriltagrobots_overlay.jpg")
-image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/13.jpg")
+image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial_Tracking/Static_Tag_Pics/14.jpg")
 #image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/20240814_043333.jpg")
 
 #h,  w = image.shape[:2]
@@ -34,12 +34,13 @@ image = cv2.imread("/home/tyler/Desktop/FRC-Apriltag-Pose-Detection/FRC_Fiducial
 #dst = dst[y:y+h, x:x+w]
 
 grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+smaller = cv2.resize(grey, (640, 360))
 
-print(grey)
+print(smaller)
 
-cv2.imshow("frame", grey)
+cv2.imshow("frame", smaller)
 cv2.waitKey(0)
 
-output = detector.detect(grey, estimate_tag_pose=False, camera_params=None, tag_size=None)
+output = detector.detect(smaller, estimate_tag_pose=False, camera_params=None, tag_size=None)
 
 print(output)

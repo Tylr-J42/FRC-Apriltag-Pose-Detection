@@ -24,7 +24,7 @@ class Picam2Vid:
             self.camera.stop()
             return
         self.frame=self.camera.capture_array('main')
-        print(self.frame.dtype)
+        #print(self.frame.dtype)
         #print("debug threading")
     
     def read(self):

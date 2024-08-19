@@ -4,7 +4,7 @@
 
 import time
 import cv2
-import apriltag
+import dt_apriltags
 import numpy as np
 from math import sqrt
 from math import pi
@@ -12,7 +12,7 @@ import math
 from networktables import NetworkTables
 import argparse
 from TagObj import TagObj
-from PiVid import PiVid
+from Picam2Vid import Picam2Vid
 from PNP_Pose_Estimation import PNPPose
 
 RAD2DEG = 180*pi
@@ -20,7 +20,7 @@ RAD2DEG = 180*pi
 # To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
 parser = argparse.ArgumentParser(description="Select display")
 parser.add_argument("--display", action='store_true', help="enable a display of the camera")
-parser.add_argument("--high_res", action='store_true', help="enable resolution 1088x720 vs 640x480")
+#parser.add_argument("--high_res", action='store_true', help="enable resolution 1088x720 vs 640x480")
 parser.add_argument("--pose_estimation", action='store_true', help="estimate pose based on detected tags")
 parser.add_argument("--ip_add", type=str, required=True)
 args = parser.parse_args()
@@ -28,17 +28,18 @@ args = parser.parse_args()
 # focal length in pixels. You can use Camera_Calibrate.py and take at least 10 pics of a chess board or calculate using a camera spec sheet
 # focal_length [mm] / imager_element_length [mm/pixel]
 # 621.5827338
-FOCAL_LEN_PIXELS = 621.5827338
+#FOCAL_LEN_PIXELS = 621.5827338
 # camera matrix from Calibrate_Camera.py.
-camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0., 308.94165115],
-    [0., FOCAL_LEN_PIXELS, 221.9470321],
-    [0., 0.,1.]])
+camera_matrix = np.array([[976.16482142,   0.,         771.05155174],
+                        [  0.,         974.47104393, 408.52081949],
+                        [  0.,           0.,           1.        ]])
 
 # from Camera_Calibration.py
-dist = np.array([ 2.32929183e-01, -1.35534844e+00, -1.51912733e-03, -2.17960810e-03, 2.25537289e+00])
+dist = np.array([-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.03875398])
  
-camera_res = (640, 480)
+camera_res = (1536, 864)
 
+'''
 if args.high_res:
     FOCAL_LEN_PIXELS = 991.5391539
     camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0.00000000, 528.420369],
@@ -47,10 +48,10 @@ if args.high_res:
     dist = np.array([[ 2.52081760e-01, -1.34794418e+00,  1.24975695e-03, -7.77510823e-04,
     2.29608398e+00]])
     camera_res = (1088, 720)
-
+'''
 b=6.5
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
-objp = np.array([[0,0,0], [-b/2, b/2, 0], [b/2, b/2, 0], [b/2, -b/2, 0], [-b/2, -b/2, 0]], dtype=np.float32)
+objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2, b/2, 0]], dtype=np.float32)
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
 
@@ -100,7 +101,7 @@ testing_tag_coords = tag_corners(testing_tags)
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
 
-cam = PiVid(camera_res).start()
+cam = Picam2Vid(camera_res).start()
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
@@ -127,12 +128,18 @@ def display_features(image, imgpts):
     return image
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
-options = apriltag.DetectorOptions(families='tag36h11', border=1, nthreads=4,
-quad_decimate=1.0, quad_blur=0.0, refine_edges=True,
-refine_decode=False, refine_pose=False, debug=False, quad_contours=True)
-detector = apriltag.Detector(options)
+detector = dt_apriltags.Detector(searchpath=['apriltags'],
+                       families='tag36h11',
+                       nthreads=3,
+                       quad_decimate=2,
+                       quad_sigma=0,
+                       refine_edges=1,
+                       decode_sharpening=0.25,
+                       debug=0)
 
 pose_estimator = PNPPose(testing_tag_coords, robo_space_pose, camera_matrix, dist)
+
+counter = 0
 
 # main vision processing code
 time.sleep(0.1)
@@ -149,7 +156,7 @@ while True:
 
     for det in output:
         # if the confidence is less than 30% exclude the tag from being processed.
-        if det[4]>30:
+        if det.decision_margin>30:
             # points of the tag to be tracked
             image_corners = list(image_corners)
             image_corners = image_corners+(list(det.corners))
@@ -177,7 +184,11 @@ while True:
 
     # frame rate for performance
     FPS = (1/(time.time()-frame_start))
-    #print(FPS)
+
+    counter = counter+1
+    if(counter%10):
+        print(FPS)
+
     vision_table.putNumber("FPS", FPS)
 
 cam.stop()

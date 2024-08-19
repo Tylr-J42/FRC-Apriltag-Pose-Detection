@@ -2,7 +2,6 @@ import dt_apriltags
 import numpy as np
 import cv2
 
-
 FOCAL_LEN_PIXELS = 976.16482142
 camera_matrix = np.array([[FOCAL_LEN_PIXELS,   0.,         771.05155174],
     [  0.,         FOCAL_LEN_PIXELS, 408.52081949],
@@ -13,9 +12,9 @@ dist = np.array([[-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.0387539
 detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        families='tag36h11',
                        nthreads=2,
-                       quad_decimate=2,
-                       quad_sigma=1,
-                       refine_edges=3,
+                       quad_decimate=1,
+                       quad_sigma=0,
+                       refine_edges=1,
                        decode_sharpening=0.25,
                        debug=1)
 
@@ -41,6 +40,6 @@ print(smaller)
 cv2.imshow("frame", smaller)
 cv2.waitKey(0)
 
-output = detector.detect(smaller, estimate_tag_pose=False, camera_params=None, tag_size=None)
+output = detector.detect(smaller, estimate_tag_pose=True, camera_params=None, tag_size=None)
 
 print(output)

@@ -15,6 +15,7 @@ while True:
 
     stream.update()
     frame = stream.read()
+    frame = cv2.flip(frame, 1)
 
     grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 

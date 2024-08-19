@@ -1,5 +1,6 @@
 from picamera2 import Picamera2
 from libcamera import Transform
+import cv2
 
 # class for allocating a thread to only updating the camera stream,
 # the other thread is used for detection processing
@@ -24,6 +25,7 @@ class Picam2Vid:
             self.camera.stop()
             return
         self.frame=self.camera.capture_array('main')
+        self.frame = cv2.flip(self.frame, 1)
         #print(self.frame.dtype)
         #print("debug threading")
     

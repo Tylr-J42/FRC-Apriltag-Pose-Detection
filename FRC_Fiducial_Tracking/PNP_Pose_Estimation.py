@@ -54,4 +54,4 @@ class PNPPose:
             print("euler XYZ: ", euler_angles, "tvecs: ", tvecs, "total_dist: ", total_dist)
 
             world_angleXYZ = [-euler_angles[0], -euler_angles[1], -euler_angles[2]]
-            z_line_offset_coord = []
+            return world_angleXYZ

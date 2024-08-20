@@ -49,6 +49,12 @@ if args.high_res:
     2.29608398e+00]])
     camera_res = (1088, 720)
 '''
+
+data_array = []
+
+pose_coords = []
+z_line_offset = 0
+
 b=6.5
 # 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
 objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2, b/2, 0]], dtype=np.float32)
@@ -101,7 +107,7 @@ testing_tag_coords = tag_corners(testing_tags)
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
 
-cam = Picam2Vid(camera_res).start()
+cam = Picam2Vid(camera_res)
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
@@ -145,6 +151,7 @@ counter = 0
 time.sleep(0.1)
 while True:
     frame_start = time.time()
+    cam.update()
     image = cam.read()
     image_corners = np.array([])
     tags_detected = []
@@ -173,6 +180,12 @@ while True:
     if(len(tags_detected) > 0):
         pose_coords = pose_estimator.calculate_coords(image_corners, tags_detected)
 
+        vision_table.putNumber("global_pose_x", pose_coords[0])
+        vision_table.putNumber("global_pose_y", pose_coords[1])
+        vision_table.putNumber("global_pose_z", pose_coords[2])
+
+        vision_table.putNumberArray("visibleTags", tags_detected)
+    
     #Showing image. use --display to show image
     if args.display:
         image = cv2.putText(image, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)

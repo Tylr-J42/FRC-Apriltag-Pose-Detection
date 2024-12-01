@@ -16,4 +16,7 @@ class constants:
 
         # from Camera_Calibration.py
         self.dist = np.array([-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.03875398])
+
+        self.VERTICAL_FOV = 67
+        self.HORIZONTAL_FOV = 102
         

@@ -32,7 +32,7 @@ camera_res = (1536, 864)
 '''
 if args.high_res:
     FOCAL_LEN_PIXELS = 991.5391539
-    constants.camera_matri = np.array([[FOCAL_LEN_PIXELS, 0.00000000, 528.420369],
+    constants.camera_matrix = np.array([[FOCAL_LEN_PIXELS, 0.00000000, 528.420369],
     [0.00000000, FOCAL_LEN_PIXELS, 342.737594],
     [0.00000000, 0.00000000, 1.00000000]])
     constants.dist = np.array([[ 2.52081760e-01, -1.34794418e+00,  1.24975695e-03, -7.77510823e-04,
@@ -143,7 +143,7 @@ while True:
             # points of the tag to be tracked
             tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
 
-            ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, constants.camera_matri, constants.dist, flags=0)
+            ret,rvecs, tvecs = cv2.solvePnP(objp, tag_points, constants.camera_matrix, constants.dist, flags=0)
 
             # making translation and rotation vectors into a format good for networktables
             tvecDist = tvecs.tolist()
@@ -157,7 +157,7 @@ while True:
 
             # only show display if you use --display for argparse
             if args.display:
-                imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, constants.camera_matri, constants.dist)
+                imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, constants.camera_matrix, constants.dist)
                 image = display_features(image, imgpts, totalDist)
 
             data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))

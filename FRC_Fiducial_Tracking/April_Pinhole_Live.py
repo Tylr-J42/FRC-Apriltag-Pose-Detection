@@ -8,13 +8,16 @@ import dt_apriltags
 import numpy as np
 from math import sqrt
 from math import pi
-import math
 from networktables import NetworkTables
 import argparse
-from TagObj import TagObj
 from Picam2Vid import Picam2Vid
+from TagPin import TagPin
+from constants import constants
 
 RAD2DEG = 180*pi
+
+VERTICAL_FOV = 67
+HORIZONTAL_FOV = 102
 
 # To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
 parser = argparse.ArgumentParser(description="Select display")
@@ -38,15 +41,6 @@ if args.high_res:
 
 data_array = []
 
-pose_coords = []
-z_line_offset = 0
-
-b=6.5
-# 3d object array. The points of the 3d april tag that coresponds to tag_points which we detect
-objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2, b/2, 0]], dtype=np.float32)
-# 2d axis array points for drawing cube overlay
-axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
-
 # network tables + RoboRio IP
 NetworkTables.initialize(server=args.ip_add)
 vision_table = NetworkTables.getTable("Fiducial")
@@ -58,32 +52,6 @@ testing_tags = [[0, 0.0, 0.0, 0.0, 0.0], [1, 12.0, 0.0, 0.0, 0.0], [2, -12.0, 0.
 # x,y,z,rx,ry,rz
 robo_space_pose = [0, 0, 0, 0, 0, 0]
 
-def tag_corners(tag_coords):
-    corners = []
-
-    for i in range(len(tag_coords)):
-        x = tag_coords[i][1]
-        y = tag_coords[i][2]
-        z = tag_coords[i][3]
-        y_rotation = tag_coords[i][4]
-
-        coordinates = [[], [], [] ,[], []]
-
-        x_offset = (b/2)*math.cos(math.radians(y_rotation))
-        z_offset = (b/2)*math.sin(math.radians(y_rotation))
-        coordinates[0] = tag_coords[i][0]
-        
-        coordinates[1] = [x-x_offset, y+b/2, z+z_offset]
-        coordinates[2] = [x+x_offset, y+b/2, z+z_offset]
-        coordinates[3] = [x+x_offset, y-b/2, z+z_offset]
-        coordinates[4] = [x-x_offset, y-b/2, z+z_offset]
-
-        corners = corners + [coordinates]
-    return corners
-
-#field_tag_coords = tag_corners(tag_coords)
-testing_tag_coords = tag_corners(testing_tags)
-
 cam = Picam2Vid(camera_res)
 
 def connectionListener(connected, info):
@@ -92,20 +60,29 @@ def connectionListener(connected, info):
 NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
 # create overlay on camera feed
-def display_features(image):
+def display_features(image, tx, ty):
     # making red lines around fiducial
     for i in range(0,4):
         f = i+1
         if f>3: f=0
         cv2.line(image, (int(det.corners[i][0]), int(det.corners[i][1])), (int(det.corners[f][0]), int(det.corners[f][1])), (0,0,255), 3)
 
-    image = cv2.putText(image, "#"+str(det.tag_id)+", "+"in", (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
+    image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(tx)+", "+str(ty), (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
     return image
+
+def findAngle(hor_coord, vert_coord):
+    centerX = camera_res[0]/2
+    centerY = camera_res[1]/2
+
+    hor_angle = (hor_coord - centerX) / centerX * (HORIZONTAL_FOV/2)
+    vert_angle = -(vert_coord - centerY) / centerY * (VERTICAL_FOV/2)
+
+    return hor_angle, vert_angle
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
 detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        families='tag36h11',
-                       nthreads=3,
+                       nthreads=4,
                        quad_decimate=2,
                        quad_sigma=0,
                        refine_edges=1,
@@ -137,35 +114,41 @@ while True:
             image_corners = np.array(image_corners)
             tags_detected.append(det.tag_id)
 
+            hor_angle, vert_angle = findAngle(det.center[0], det.center[1])
+
             # only show display if you use --display for argparse
             if args.display:
                 tag_points = np.array([[det.center[0], det.center[1]], [det.corners[0][0], det.corners[0][1]], [det.corners[1][0], det.corners[1][1]], [det.corners[2][0], det.corners[2][1]], [det.corners[3][0], det.corners[3][1]]], dtype=np.float32)
-                image = display_features(image)
+                image = display_features(image, hor_angle, vert_angle)
+
+            data_array.append(TagPin(det.tag_id, hor_angle, vert_angle))
 
     if(len(tags_detected) > 0):
-        vision_table.putNumber("global_pose_x", pose_coords[0])
-        vision_table.putNumber("global_pose_y", pose_coords[1])
-        vision_table.putNumber("global_pose_z", pose_coords[2])
-
         vision_table.putNumberArray("visibleTags", tags_detected)
+
+        for i in range(len(data_array)):
+            vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tx", data_array[i].get_tx())
+            vision_table.putNumber("tag"+str(data_array[i].tag_id)+"ty", data_array[i].get_ty())
     
     #Showing image. use --display to show image
     if args.display:
         image = cv2.putText(image, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
         cv2.imshow("Frame", image)
 
-    key = cv2.waitKey(1) & 0xFF
-    if key ==ord("q"):
-        break
+        key = cv2.waitKey(1) & 0xFF
+        if key ==ord("q"):
+            break
 
-    # frame rate for performance
-    FPS = (1/(time.time()-frame_start))
+    
 
     counter = counter+1
-    if(counter%10):
+    if(counter==50):
+        # frame rate for performance
+        FPS = (1/(time.time()-frame_start))
+        counter = 0
         print(FPS)
 
-    vision_table.putNumber("FPS", FPS)
+    #vision_table.putNumber("FPS", FPS)
 
 cam.stop()
 cv2.destroyAllWindows()

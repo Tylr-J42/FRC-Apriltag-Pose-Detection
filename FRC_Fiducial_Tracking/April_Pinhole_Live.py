@@ -8,7 +8,6 @@ import dt_apriltags
 import numpy as np
 from math import sqrt
 from math import pi
-from networktables import NetworkTables
 import argparse
 from Picam2Vid import Picam2Vid
 from TagPin import TagPin
@@ -40,8 +39,12 @@ if args.high_res:
 data_array = []
 
 # network tables + RoboRio IP
-NetworkTables.initialize(server=args.ip_add)
-vision_table = NetworkTables.getTable("Fiducial")
+inst = ntcore.NetworkTableInstance.getDefault()
+vision_table = inst.getTable("Fiducial")
+tag3tx = vision_table.getDoubleTopic("tag3tx").publish()
+tag3ty = vision_table.getDoubleTopic("tag3ty").publish()
+inst.startClient4("client")
+inst.setServerTeam(2648)
 
 FPS = 0
 
@@ -55,7 +58,6 @@ cam = Picam2Vid(camera_res)
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
 
-NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
 # create overlay on camera feed
 def display_features(image, tx, ty):
@@ -126,8 +128,12 @@ while True:
     if(len(tags_detected) > 0):
 
         for i in range(len(data_array)):
-            vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tx", data_array[i].get_tx())
-            vision_table.putNumber("tag"+str(data_array[i].tag_id)+"ty", data_array[i].get_ty())
+            if(data_array[i].tag_id == 3):
+                tag3tx.set(data_array[i].get_tx())
+                tag3ty.set(data_array[i].get_ty())
+    else:
+        tag3tx.set(0.0)
+        tag3ty.set(0.0)
     
     #Showing image. use --display to show image
     if args.display:

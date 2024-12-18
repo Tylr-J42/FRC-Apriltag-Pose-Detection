@@ -12,12 +12,10 @@ from networktables import NetworkTables
 import argparse
 from Picam2Vid import Picam2Vid
 from TagPin import TagPin
-from constants import constants
+import constants
+import ntcore
 
 RAD2DEG = 180*pi
-
-VERTICAL_FOV = 67
-HORIZONTAL_FOV = 102
 
 # To show display of camera feed add --display in terminal when running script. To set IP address use --ip_add.
 parser = argparse.ArgumentParser(description="Select display")
@@ -74,15 +72,15 @@ def findAngle(hor_coord, vert_coord):
     centerX = camera_res[0]/2
     centerY = camera_res[1]/2
 
-    hor_angle = (hor_coord - centerX) / centerX * (HORIZONTAL_FOV/2)
-    vert_angle = -(vert_coord - centerY) / centerY * (VERTICAL_FOV/2)
+    hor_angle = (hor_coord - centerX) / centerX * (constants.HORIZONTAL_FOV/2)
+    vert_angle = -(vert_coord - centerY) / centerY * (constants.VERTICAL_FOV/2)
 
     return hor_angle, vert_angle
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
 detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        families='tag36h11',
-                       nthreads=4,
+                       nthreads=3,
                        quad_decimate=2,
                        quad_sigma=0,
                        refine_edges=1,
@@ -123,8 +121,9 @@ while True:
 
             data_array.append(TagPin(det.tag_id, hor_angle, vert_angle))
 
+    vision_table.putNumberArray("visibleTags", tags_detected)
+    
     if(len(tags_detected) > 0):
-        vision_table.putNumberArray("visibleTags", tags_detected)
 
         for i in range(len(data_array)):
             vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tx", data_array[i].get_tx())
@@ -139,10 +138,8 @@ while True:
         if key ==ord("q"):
             break
 
-    
-
     counter = counter+1
-    if(counter==50):
+    if(counter==25):
         # frame rate for performance
         FPS = (1/(time.time()-frame_start))
         counter = 0

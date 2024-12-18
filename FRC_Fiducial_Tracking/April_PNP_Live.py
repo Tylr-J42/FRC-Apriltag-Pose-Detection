@@ -11,7 +11,7 @@ from math import pi
 import math
 from networktables import NetworkTables
 import argparse
-from constants import constants
+import constants
 
 from TagObj import TagObj
 #from PiVid import PiVid
@@ -135,7 +135,7 @@ while True:
     
     output = detector.detect(tagFrame)
 
-    print(output)
+    #print(output)
 
     for det in output:
         # if the confidence is less than 30% exclude the tag from being processed.
@@ -187,8 +187,8 @@ while True:
     FPS = (1/(time.time()-frame_start))
 
     counter = counter+1
-    if(counter%10):
-        print(FPS)
+    #if(counter%10):
+        #print(FPS)
 
     vision_table.putNumber("FPS", FPS)
 

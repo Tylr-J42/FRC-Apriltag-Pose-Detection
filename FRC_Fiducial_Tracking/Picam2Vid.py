@@ -25,7 +25,8 @@ class Picam2Vid:
             self.camera.stop()
             return
         self.frame=self.camera.capture_array('main')
-        self.frame = cv2.flip(self.frame, 1)
+        #self.frame = cv2.flip(self.frame, 1)
+        self.frame = cv2.flip(self.frame, 0)
         #print(self.frame.dtype)
         #print("debug threading")
     

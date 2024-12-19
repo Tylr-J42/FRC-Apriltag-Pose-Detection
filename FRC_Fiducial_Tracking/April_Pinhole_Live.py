@@ -67,7 +67,7 @@ def display_features(image, tx, ty):
         if f>3: f=0
         cv2.line(image, (int(det.corners[i][0]), int(det.corners[i][1])), (int(det.corners[f][0]), int(det.corners[f][1])), (0,0,255), 3)
 
-    image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(tx)+", "+str(ty), (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
+    image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(int(tx))+", "+str(int(ty)), (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
     return image
 
 def findAngle(hor_coord, vert_coord):
@@ -99,6 +99,7 @@ while True:
     image = cam.read()
     image_corners = np.array([])
     tags_detected = []
+    data_array = []
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

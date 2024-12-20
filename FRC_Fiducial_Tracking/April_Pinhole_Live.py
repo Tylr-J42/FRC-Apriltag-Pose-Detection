@@ -43,6 +43,7 @@ inst = ntcore.NetworkTableInstance.getDefault()
 vision_table = inst.getTable("Fiducial")
 tag3tx = vision_table.getDoubleTopic("tag3tx").publish()
 tag3ty = vision_table.getDoubleTopic("tag3ty").publish()
+FPS_topic = vision_table.getDoubleTopic("fps").publish()
 inst.startClient4("client")
 inst.setServerTeam(2648)
 
@@ -123,8 +124,6 @@ while True:
                 image = display_features(image, hor_angle, vert_angle)
 
             data_array.append(TagPin(det.tag_id, hor_angle, vert_angle))
-
-    vision_table.putNumberArray("visibleTags", tags_detected)
     
     if(len(tags_detected) > 0):
 
@@ -135,6 +134,7 @@ while True:
     else:
         tag3tx.set(0.0)
         tag3ty.set(0.0)
+    FPS_topic.set(FPS)
     
     #Showing image. use --display to show image
     if args.display:
@@ -150,7 +150,7 @@ while True:
         # frame rate for performance
         FPS = (1/(time.time()-frame_start))
         counter = 0
-        print(FPS)
+        #print(FPS)
 
     #vision_table.putNumber("FPS", FPS)
 

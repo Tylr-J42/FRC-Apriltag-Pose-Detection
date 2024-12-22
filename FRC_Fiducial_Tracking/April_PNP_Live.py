@@ -9,9 +9,9 @@ import numpy as np
 from math import sqrt
 from math import pi
 import math
-from networktables import NetworkTables
 import argparse
 import constants
+import ntcore
 
 from TagObj import TagObj
 #from PiVid import PiVid
@@ -44,14 +44,19 @@ objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2,
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
 
+tx3 = 0
+ty3 = 0
+
 # network tables + RoboRio IP
-NetworkTables.initialize(server=args.ip_add)
-vision_table = NetworkTables.getTable("Fiducial")
+inst = ntcore.NetworkTableInstance.getDefault()
+vision_table = inst.getTable("Fiducial")
+tag3tx = vision_table.getDoubleTopic("tag3tx").publish()
+tag3ty = vision_table.getDoubleTopic("tag3ty").publish()
+FPS_topic = vision_table.getDoubleTopic("fps").publish()
+inst.startClient4("client")
+inst.setServerTeam(2648)
 
 FPS = 0
-
-# x,y,z,rx,ry,rz
-robo_space_pose = [0, 0, 0, 0, 0, 0]
 
 def tag_corners(tag_coords):
     corners = []
@@ -76,6 +81,11 @@ def tag_corners(tag_coords):
 
     return corners
 
+def getTXTY(tvecX, tvecY, tvecZ):
+    ty = np.rad2deg(math.atan(np.deg2rad(tvecY)/np.deg2rad(tvecZ))) + constants.robo_space_pose[1]
+    tx = np.rad2deg(math.atan(np.deg2rad(tvecX)/np.deg2rad(tvecZ))) + constants.robo_space_pose[2]
+    return tx, ty
+
 field_tag_coords = tag_corners(constants.tag_coords)
 
 def getTagCoords(tag_id):
@@ -85,8 +95,6 @@ cam = Picam2Vid(constants.camera_res)
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
-
-NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
 # create overlay on camera feed
 def display_features(image, imgpts, totalDist):
@@ -126,7 +134,9 @@ while True:
     cam.update()
     image = cam.read()
     data_array = []
-    visible_tags = []
+    tags_detected = []
+    tx3 = 0
+    ty3 = 0
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -159,36 +169,32 @@ while True:
                 image = display_features(image, imgpts, totalDist)
 
             data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
-
+            tags_detected.append(det.tag_id)
+    
     for i in range(len(data_array)):
-
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecX", data_array[i].tvec_x)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecY", data_array[i].tvec_y)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"tvecZ", data_array[i].tvec_z)
+        tx, ty = getTXTY(data_array[i].tvec_x, data_array[i].tvec_y, data_array[i].tvec_z)
         
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecX", data_array[i].rvec_x)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecY", data_array[i].rvec_y)
-        vision_table.putNumber("tag"+str(data_array[i].tag_id)+"rvecZ", data_array[i].rvec_z)
-
-        visible_tags.append(data_array[i].tag_id)
-
-    vision_table.putNumberArray("visibleTags", visible_tags)
+        if(data_array[i].tag_id == 3):
+            tx3 = tx
+            ty3 = ty
 
     #Showing image. use --display to show image
     if args.display:
         image = cv2.putText(image, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
         cv2.imshow("Frame", image)
 
-        key = cv2.waitKey(1)
+        key = cv2.waitKey(1) & 0xFF
+        if key ==ord("q"):
+            break
 
-    # frame rate for performance
-    FPS = (1/(time.time()-frame_start))
+    tag3tx.set(tx3)
+    tag3ty.set(ty3)
 
     counter = counter+1
-    #if(counter%10):
+    if(counter==25):
+        # frame rate for performance
+        FPS = (1/(time.time()-frame_start))
+        counter = 0
         #print(FPS)
 
     vision_table.putNumber("FPS", FPS)
-
-cam.stop()
-cv2.destroyAllWindows()

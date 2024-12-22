@@ -141,6 +141,7 @@ while True:
     else:
         tag3tx.set(0.0)
         tag3ty.set(0.0)
+        
     FPS_topic.set(FPS)
     
     #Showing image. use --display to show image

@@ -13,6 +13,7 @@ camera_martix = np.array([[935.58552861,   0.,         664.73887135],
     [  0.,         932.27174304, 326.00933432],
     [  0.,           0.,           1.        ]])
 
+# for arducam OV9872 camrea
 dist = np.array([[-0.026375,    0.28978668, -0.00669531, -0.00973697, -0.48583437]])
 
 # 2023 Field Apriltag Coordinates index = tag id
@@ -35,4 +36,6 @@ HORIZONTAL_FOV = 102
 # for RPi Camera v3 Wide
 #VERTICAL_FOV = 67
 #HORIZONTAL_FOV = 102
-        
+
+# x,y,z,rx,ry,rz
+robo_space_pose = [0, 0, 0, 0, 0, 0]        

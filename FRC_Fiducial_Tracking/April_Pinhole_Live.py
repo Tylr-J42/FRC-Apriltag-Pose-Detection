@@ -22,8 +22,6 @@ parser.add_argument("--display", action='store_true', help="enable a display of 
 #parser.add_argument("--high_res", action='store_true', help="enable resolution 1088x720 vs 640x480")
 parser.add_argument("--ip_add", type=str, required=True)
 args = parser.parse_args()
- 
-camera_res = (1536, 864)
 
 '''
 if args.high_res:
@@ -33,7 +31,7 @@ if args.high_res:
     [0.00000000, 0.00000000, 1.00000000]])
     dist = np.array([[ 2.52081760e-01, -1.34794418e+00,  1.24975695e-03, -7.77510823e-04,
     2.29608398e+00]])
-    camera_res = (1088, 720)
+    constants.camera_res = (1088, 720)
 '''
 
 data_array = []
@@ -54,7 +52,16 @@ testing_tags = [[0, 0.0, 0.0, 0.0, 0.0], [1, 12.0, 0.0, 0.0, 0.0], [2, -12.0, 0.
 # x,y,z,rx,ry,rz
 robo_space_pose = [0, 0, 0, 0, 0, 0]
 
-cam = Picam2Vid(camera_res)
+cam = cv2.VideoCapture(0)
+
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)
+
+cam.set(cv2.CAP_PROP_FPS, 100.0)
+cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto mode
+cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
+cam.set(cv2.CAP_PROP_EXPOSURE, 30)
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
@@ -72,8 +79,8 @@ def display_features(image, tx, ty):
     return image
 
 def findAngle(hor_coord, vert_coord):
-    centerX = camera_res[0]/2
-    centerY = camera_res[1]/2
+    centerX = constants.camera_res[0]/2
+    centerY = constants.camera_res[1]/2
 
     hor_angle = (hor_coord - centerX) / centerX * (constants.HORIZONTAL_FOV/2)
     vert_angle = -(vert_coord - centerY) / centerY * (constants.VERTICAL_FOV/2)

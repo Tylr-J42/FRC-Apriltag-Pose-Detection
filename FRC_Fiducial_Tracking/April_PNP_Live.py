@@ -27,8 +27,6 @@ parser.add_argument("--pose_estimation", action='store_true', help="estimate pos
 parser.add_argument("--ip_add", type=str, required=True)
 args = parser.parse_args()
 
-camera_res = (1536, 864)
-
 '''
 if args.high_res:
     FOCAL_LEN_PIXELS = 991.5391539
@@ -83,7 +81,7 @@ field_tag_coords = tag_corners(constants.tag_coords)
 def getTagCoords(tag_id):
     return constants.tag_coords[tag_id]
 
-cam = Picam2Vid(camera_res)
+cam = Picam2Vid(constants.camera_res)
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)

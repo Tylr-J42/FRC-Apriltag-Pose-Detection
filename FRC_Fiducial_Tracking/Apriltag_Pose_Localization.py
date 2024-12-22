@@ -14,6 +14,7 @@ import argparse
 from TagObj import TagObj
 from Picam2Vid import Picam2Vid
 from PNP_Pose_Estimation import PNPPose
+import constants
 
 RAD2DEG = 180*pi
 
@@ -36,8 +37,6 @@ camera_matrix = np.array([[976.16482142,   0.,         771.05155174],
 
 # from Camera_Calibration.py
 dist = np.array([-0.04790604,  0.08489533, -0.00387366,  0.00616192, -0.03875398])
- 
-camera_res = (1536, 864)
 
 '''
 if args.high_res:
@@ -47,7 +46,7 @@ if args.high_res:
     [0.00000000, 0.00000000, 1.00000000]])
     dist = np.array([[ 2.52081760e-01, -1.34794418e+00,  1.24975695e-03, -7.77510823e-04,
     2.29608398e+00]])
-    camera_res = (1088, 720)
+    constants.camera_res = (1088, 720)
 '''
 
 data_array = []
@@ -107,7 +106,7 @@ testing_tag_coords = tag_corners(testing_tags)
 def getTagCoords(tag_id):
     return tag_coords[tag_id]
 
-cam = Picam2Vid(camera_res)
+cam = Picam2Vid(constants.camera_res)
 
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)

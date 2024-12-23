@@ -14,8 +14,6 @@ import constants
 import ntcore
 
 from TagObj import TagObj
-#from PiVid import PiVid
-from Picam2Vid import Picam2Vid
 
 RAD2DEG = 180*pi
 
@@ -47,6 +45,8 @@ axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0],
 tx3 = 0
 ty3 = 0
 
+FPS = 0
+
 # network tables + RoboRio IP
 inst = ntcore.NetworkTableInstance.getDefault()
 vision_table = inst.getTable("Fiducial")
@@ -56,7 +56,17 @@ FPS_topic = vision_table.getDoubleTopic("fps").publish()
 inst.startClient4("client")
 inst.setServerTeam(2648)
 
-FPS = 0
+cam = cv2.VideoCapture(0)
+
+cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)
+cam.set(cv2.CAP_PROP_FPS, 100.0)
+cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
+cam.set(cv2.CAP_PROP_EXPOSURE, 60)
+cam.set(cv2.CAP_PROP_SHARPNESS, 3)
+cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
+cam.set(cv2.CAP_PROP_CONTRAST, 32)
 
 def tag_corners(tag_coords):
     corners = []
@@ -91,8 +101,6 @@ field_tag_coords = tag_corners(constants.tag_coords)
 def getTagCoords(tag_id):
     return constants.tag_coords[tag_id]
 
-cam = Picam2Vid(constants.camera_res)
-
 def connectionListener(connected, info):
     print(info, "; Connected=%s" % connected)
 
@@ -122,7 +130,7 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        quad_decimate=2,
                        quad_sigma=0,
                        refine_edges=1,
-                       decode_sharpening=0.25,
+                       decode_sharpening=0.0,
                        debug=0)
 
 counter = 0
@@ -131,8 +139,7 @@ counter = 0
 time.sleep(0.1)
 while True:
     frame_start = time.time()
-    cam.update()
-    image = cam.read()
+    ret, image = cam.read()
     data_array = []
     tags_detected = []
     tx3 = 0
@@ -190,11 +197,11 @@ while True:
     tag3tx.set(tx3)
     tag3ty.set(ty3)
 
+    FPS_topic.set(FPS)
+
     counter = counter+1
     if(counter==25):
         # frame rate for performance
         FPS = (1/(time.time()-frame_start))
         counter = 0
-        #print(FPS)
-
-    vision_table.putNumber("FPS", FPS)
+        print(FPS)

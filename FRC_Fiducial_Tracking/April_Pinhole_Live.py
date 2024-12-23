@@ -47,19 +47,12 @@ inst.setServerTeam(2648)
 
 FPS = 0
 
-testing_tags = [[0, 0.0, 0.0, 0.0, 0.0], [1, 12.0, 0.0, 0.0, 0.0], [2, -12.0, 0.0, 0.0, 0.0]]
-
-# x,y,z,rx,ry,rz
-robo_space_pose = [0, 0, 0, 0, 0, 0]
-
 cam = cv2.VideoCapture(0)
 
+cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)
-
-cam.set(cv2.CAP_PROP_FPS, 100.0)
-cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto mode
+cam.set(cv2.CAP_PROP_FPS, 100)
 cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
 cam.set(cv2.CAP_PROP_EXPOSURE, 30)
 
@@ -103,8 +96,7 @@ counter = 0
 time.sleep(0.1)
 while True:
     frame_start = time.time()
-    cam.update()
-    image = cam.read()
+    ret, image = cam.read()
     image_corners = np.array([])
     tags_detected = []
     data_array = []
@@ -141,7 +133,7 @@ while True:
     else:
         tag3tx.set(0.0)
         tag3ty.set(0.0)
-        
+
     FPS_topic.set(FPS)
     
     #Showing image. use --display to show image
@@ -158,7 +150,7 @@ while True:
         # frame rate for performance
         FPS = (1/(time.time()-frame_start))
         counter = 0
-        #print(FPS)
+        print(FPS)
 
     #vision_table.putNumber("FPS", FPS)
 

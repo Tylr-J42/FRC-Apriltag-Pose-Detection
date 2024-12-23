@@ -9,7 +9,7 @@ camera_matrix = np.array([[976.16482142,   0.,         771.05155174],
 '''
 
 #for the Arducam OV9872 Camera
-camera_martix = np.array([[935.58552861,   0.,         664.73887135],
+camera_matrix = np.array([[935.58552861,   0.,         664.73887135],
     [  0.,         932.27174304, 326.00933432],
     [  0.,           0.,           1.        ]])
 

@@ -37,11 +37,10 @@ axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0],
 tx3 = 0
 ty3 = 0
 
-FPS = 0
-
 class PNP_Detection:
     
     def __init__(self, camera_num):
+        self.camera_num = camera_num
 
         self.cam = cv2.VideoCapture(camera_num)
         cam = self.cam
@@ -55,9 +54,6 @@ class PNP_Detection:
         cam.set(cv2.CAP_PROP_SHARPNESS, 3)
         cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
         cam.set(cv2.CAP_PROP_CONTRAST, 32)
-
-        self.counter = 0
-        self.FPS = 0
 
         # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
         self.detector = dt_apriltags.Detector(searchpath=['apriltags'],
@@ -124,11 +120,10 @@ class PNP_Detection:
         image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(round(totalDist, 4))+"in", (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
         return image
 
-    def update(self, display):
+    def update(self, display, FPS):
         
         cam = self.cam
     
-        frame_start = time.time()
         ret, image = cam.read()
         data_array = []
         tags_detected = []
@@ -177,16 +172,9 @@ class PNP_Detection:
 
         #Showing image. use --display to show image
         if display:
-            image = cv2.putText(image, "FPS: "+str(round(self.FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
-            cv2.imshow("Frame", image)
+            image = cv2.putText(image, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
+            cv2.imshow("Camera" + str(self.camera_num), image)
 
-            cv2.waitKey(1)
-        
-        self.counter = self.counter+1
-        if(self.counter==25):
-            # frame rate for performance
-            self.FPS = (1/(time.time()-frame_start))
-            self.counter = 0
-            print(self.FPS)
+            cv2.waitKey(1)        
 
-        return tx3, ty3, self.FPS
+        return tx3, ty3

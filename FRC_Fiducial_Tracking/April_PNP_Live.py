@@ -65,44 +65,13 @@ class PNP_Detection:
                             decode_sharpening=0.0,
                             debug=0)
 
-    def tag_corners(tag_coords):
-        corners = []
-
-        for i in range(len(constants.tag_coords)):
-            x = tag_coords[i][1]
-            y = tag_coords[i][2]
-            z = tag_coords[i][3]
-            z_rotation = tag_coords[i][4]
-
-            coordinates = [[], [], [] ,[], []]
-
-            x_offset = (b/2)*math.cos(math.radians(z_rotation))
-            y_offset = (b/2)*math.sin(math.radians(z_rotation))
-            coordinates[0] = tag_coords[i][0]
-            coordinates[1] = [x-x_offset, y+y_offset, z+b/2]
-            coordinates[2] = [x+x_offset, y+y_offset, z+b/2]
-            coordinates[3] = [x+x_offset, y+y_offset, z-b/2]
-            coordinates[4] = [x-x_offset, y+y_offset, z-b/2]
-
-            corners.append(coordinates)
-
-        return corners
-
-    def getTXTY(tvecX, tvecY, tvecZ):
+    def getTXTY(self, tvecX, tvecY, tvecZ):
         ty = np.rad2deg(math.atan(np.deg2rad(tvecY)/np.deg2rad(tvecZ))) + constants.robo_space_pose[1]
         tx = np.rad2deg(math.atan(np.deg2rad(tvecX)/np.deg2rad(tvecZ))) + constants.robo_space_pose[2]
         return tx, ty
 
-    field_tag_coords = tag_corners(constants.tag_coords)
-
-    def getTagCoords(tag_id):
-        return constants.tag_coords[tag_id]
-
-    def connectionListener(connected, info):
-        print(info, "; Connected=%s" % connected)
-
     # create overlay on camera feed
-    def display_features(image, imgpts, totalDist, det):
+    def display_features(self, image, imgpts, totalDist, det):
         # making red lines around fiducial
         for i in range(0,4):
             f = i+1

@@ -25,14 +25,14 @@ FPS = 0
 counter = 0
 
 detector1 = PNP_Detection(0)
-detector2 = PNP_Detection(2)
+#detector2 = PNP_Detection(2)
 time.sleep(0.1)
 
 while True:
     frame_start = time.time()
 
     tx3, ty3 = detector1.update(args.display, FPS)
-    tx32, ty32 = detector2.update(args.display, FPS)
+    #tx32, ty32 = detector2.update(args.display, FPS)
 
     tag3tx.set(tx3)
     tag3ty.set(ty3)
@@ -40,7 +40,7 @@ while True:
 
     counter = counter+1
     if(counter==25):
-            # frame rate for performance
-            FPS = (1/(time.time()-frame_start))
-            counter = 0
-            print(FPS)
+        # frame rate for performance
+        FPS = (1/(time.time()-frame_start))
+        counter = 0
+        print(FPS)

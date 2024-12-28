@@ -55,6 +55,21 @@ FPS_topic = vision_table.getDoubleTopic("fps").publish()
 inst.startClient4("client")
 inst.setServerTeam(2648)
 
+
+cam = cv2.VideoCapture(2)
+
+cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)
+cam.set(cv2.CAP_PROP_FPS, 100.0)
+cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
+cam.set(cv2.CAP_PROP_EXPOSURE, 60)
+cam.set(cv2.CAP_PROP_SHARPNESS, 3)
+cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
+cam.set(cv2.CAP_PROP_CONTRAST, 32)
+
+
+'''
 cam = cv2.VideoCapture(0)
 
 cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -66,6 +81,7 @@ cam.set(cv2.CAP_PROP_EXPOSURE, 60)
 cam.set(cv2.CAP_PROP_SHARPNESS, 3)
 cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 cam.set(cv2.CAP_PROP_CONTRAST, 32)
+'''
 
 def tag_corners(tag_coords):
     corners = []

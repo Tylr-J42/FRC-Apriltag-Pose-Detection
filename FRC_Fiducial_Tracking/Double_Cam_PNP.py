@@ -116,7 +116,7 @@ def detection_loop(output, input_image):
     tags_detected = []
     output_image = input_image
 
-    for det in output1:
+    for det in output:
             # if the confidence is less than 30% exclude the tag from being processed.
             if det.decision_margin>30:
                 # points of the tag to be tracked
@@ -152,7 +152,7 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
                        quad_decimate=2,
                        quad_sigma=0,
                        refine_edges=1,
-                       decode_sharpening=0.0,
+                       decode_sharpening=0.25,
                        debug=0)
 
 counter = 0
@@ -189,7 +189,6 @@ while True:
             cam1tx3 = tx
             cam1ty3 = ty
             cam1_detected = True
-            
     
     for i in range(len(data_array2)):
         tx, ty = getTXTY(data_array2[i].tvec_x, data_array2[i].tvec_y, data_array2[i].tvec_z)
@@ -197,7 +196,7 @@ while True:
         if(data_array2[i].tag_id == 3):
             cam2tx3 = tx
             cam2ty3 = ty
-            cam2_detected = False
+            cam2_detected = True
 
     #Showing image. use --display to show image
     if args.display:

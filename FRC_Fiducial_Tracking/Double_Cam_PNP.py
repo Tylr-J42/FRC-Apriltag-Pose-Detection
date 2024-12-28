@@ -54,8 +54,10 @@ vision_table = inst.getTable("Fiducial")
 
 cam1tag3tx = vision_table.getDoubleTopic("cam1tag3tx").publish()
 cam1tag3ty = vision_table.getDoubleTopic("cam1tag3ty").publish()
-cam2tag3tx = vision_table.getDoubleTopic("cam1tag3tx").publish()
-cam2tag3ty = vision_table.getDoubleTopic("cam1tag3ty").publish()
+cam2tag3tx = vision_table.getDoubleTopic("cam2tag3tx").publish()
+cam2tag3ty = vision_table.getDoubleTopic("cam2tag3ty").publish()
+cam1_tags_visible = vision_table.getDoubleTopic("cam1_visible").publish()
+cam2_tags_visible = vision_table.getBooleanTopic("cam2_visible").publish()
 FPS_topic = vision_table.getDoubleTopic("fps").publish()
 
 inst.startClient4("client")
@@ -109,9 +111,10 @@ def display_features(image, imgpts, totalDist, det):
     image = cv2.putText(image, "#"+str(det.tag_id)+", "+str(round(totalDist, 4))+"in", (int(det.center[0]),int(det.center[1])+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2, cv2.LINE_AA)
     return image
 
-def detection_loop(output, output_image):
+def detection_loop(output, input_image):
     data_array = []
     tags_detected = []
+    output_image = input_image
 
     for det in output1:
             # if the confidence is less than 30% exclude the tag from being processed.
@@ -134,12 +137,12 @@ def detection_loop(output, output_image):
                 # only show display if you use --display for argparse
                 if args.display:
                     imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, constants.camera_matrix, constants.dist)
-                    image = display_features(output_image, imgpts, totalDist, det)
+                    output_image = display_features(input_image, imgpts, totalDist, det)
                     
 
                 data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
                 tags_detected.append(det.tag_id)
-    return data_array, tags_detected, image
+    return data_array, tags_detected, output_image
 
 
 # setting up apriltag detection. Make sure this is OUTSIDE the loop next time
@@ -164,6 +167,8 @@ while True:
     cam1ty3 = 0
     cam2tx3 = 0
     cam2ty3 = 0
+    cam1_detected = False
+    cam2_detected = False
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -183,6 +188,8 @@ while True:
         if(data_array1[i].tag_id == 3):
             cam1tx3 = tx
             cam1ty3 = ty
+            cam1_detected = True
+            
     
     for i in range(len(data_array2)):
         tx, ty = getTXTY(data_array2[i].tvec_x, data_array2[i].tvec_y, data_array2[i].tvec_z)
@@ -190,6 +197,7 @@ while True:
         if(data_array2[i].tag_id == 3):
             cam2tx3 = tx
             cam2ty3 = ty
+            cam2_detected = False
 
     #Showing image. use --display to show image
     if args.display:
@@ -207,6 +215,8 @@ while True:
     cam1tag3ty.set(cam1ty3)
     cam2tag3tx.set(cam2tx3)
     cam2tag3ty.set(cam2ty3)
+    cam1_tags_visible.set(cam1_detected)
+    cam2_tags_visible.set(cam2_detected)
 
     FPS_topic.set(FPS)
 

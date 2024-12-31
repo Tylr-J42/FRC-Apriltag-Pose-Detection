@@ -56,7 +56,7 @@ cam1tag3tx = vision_table.getDoubleTopic("cam1tag3tx").publish()
 cam1tag3ty = vision_table.getDoubleTopic("cam1tag3ty").publish()
 cam2tag3tx = vision_table.getDoubleTopic("cam2tag3tx").publish()
 cam2tag3ty = vision_table.getDoubleTopic("cam2tag3ty").publish()
-cam1_tags_visible = vision_table.getDoubleTopic("cam1_visible").publish()
+cam1_tags_visible = vision_table.getBooleanTopic("cam1_visible").publish()
 cam2_tags_visible = vision_table.getBooleanTopic("cam2_visible").publish()
 FPS_topic = vision_table.getDoubleTopic("fps").publish()
 
@@ -87,9 +87,15 @@ cam2.set(cv2.CAP_PROP_SHARPNESS, 3)
 cam2.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 cam2.set(cv2.CAP_PROP_CONTRAST, 32)
 
-def getTXTY(tvecX, tvecY, tvecZ):
-    ty = np.rad2deg(math.atan(np.deg2rad(tvecY)/np.deg2rad(tvecZ))) + constants.robo_space_pose[1]
-    tx = np.rad2deg(math.atan(np.deg2rad(tvecX)/np.deg2rad(tvecZ))) + constants.robo_space_pose[2]
+def getTXTY(tvecX, tvecY, tvecZ, robo_relative_pose):
+    ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
+    tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
+    txdist = math.sqrt(tvecY**2 + tvecZ**2)
+    tydist = math.sqrt(tvecX**2 + tvecZ**2)
+
+    tx = math.atan((np.rad2deg(txdist * math.sin(tx + robo_relative_pose[2]) + robo_relative_pose[4])) / (txdist * math.cos(tx + robo_relative_pose[2]) + robo_relative_pose[3]))
+    ty = math.atan((np.rad2deg(tydist * math.sin(ty + robo_relative_pose[1]) + robo_relative_pose[4])) / (tydist * math.cos(ty + robo_relative_pose[1]) + robo_relative_pose[5]))
+
     return tx, ty
 
 # create overlay on camera feed
@@ -140,7 +146,7 @@ def detection_loop(output, input_image):
                     output_image = display_features(input_image, imgpts, totalDist, det)
                     
 
-                data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
+                data_array.append((det.tag_id, tvecDist, rvecDeg, totalDist))
                 tags_detected.append(det.tag_id)
     return data_array, tags_detected, output_image
 
@@ -161,7 +167,7 @@ counter = 0
 time.sleep(0.1)
 while True:
     frame_start = time.time()
-    ret, image = cam.read()
+    ret, image1 = cam.read()
     ret2, image2 = cam2.read()
     cam1tx3 = 0
     cam1ty3 = 0
@@ -171,7 +177,7 @@ while True:
     cam2_detected = False
 
     #detecting april tags
-    tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    tagFrame = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     tagFrame2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
     
     output1 = detector.detect(tagFrame)
@@ -179,11 +185,11 @@ while True:
 
     #print(output)
 
-    data_array1, tags_detected1, image = detection_loop(output1, image)
+    data_array1, tags_detected1, image1 = detection_loop(output1, image1)
     data_array2, tags_detected2, image2 = detection_loop(output2, image2)
 
     for i in range(len(data_array1)):
-        tx, ty = getTXTY(data_array1[i].tvec_x, data_array1[i].tvec_y, data_array1[i].tvec_z)
+        tx, ty = getTXTY(data_array1[i][1][0], data_array1[i][1][1], data_array1[i][1][2], constants.cam1_robo_space_pose)
         
         if(data_array1[i].tag_id == 3):
             cam1tx3 = tx
@@ -191,20 +197,20 @@ while True:
             cam1_detected = True
     
     for i in range(len(data_array2)):
-        tx, ty = getTXTY(data_array2[i].tvec_x, data_array2[i].tvec_y, data_array2[i].tvec_z)
+        tx, ty = getTXTY(data_array2[i][1][0], data_array2[i][1][1], data_array2[i][1][2], constants.cam2_robo_space_pose)
         
-        if(data_array2[i].tag_id == 3):
+        if(data_array2[i][0] == 3):
             cam2tx3 = tx
             cam2ty3 = ty
             cam2_detected = True
 
     #Showing image. use --display to show image
     if args.display:
-        image = cv2.putText(image, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
-        cv2.imshow("Camera 1", image)
+        image1 = cv2.putText(image1, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
+        cv2.imshow("Camera 1", image1)
 
         image2 = cv2.putText(image2, "FPS: "+str(round(FPS, 4)), (25,440), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
-        cv2.imshow("camera 2", image2)
+        cv2.imshow("Camera 2", image2)
 
         key = cv2.waitKey(1) & 0xFF
         if key ==ord("q"):

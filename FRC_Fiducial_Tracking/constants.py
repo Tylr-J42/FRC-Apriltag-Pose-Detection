@@ -37,5 +37,10 @@ HORIZONTAL_FOV = 102
 #VERTICAL_FOV = 67
 #HORIZONTAL_FOV = 102
 
+#X = forward/back, Y = left/right, Z = up/down
+# roll, pitch, yaw (CW positive)
 # x,y,z,rx,ry,rz
-robo_space_pose = [0, 0, 0, 0, 0, 0]        
+
+# for the offseason bot:
+cam1_robo_space_pose = [0.0, 30.0, 35.0, 12.725, 2.19, 0.0]
+cam2_robo_space_pose = [0.0, 30.0, -35.0, 12.725, -2.19, 0.0]

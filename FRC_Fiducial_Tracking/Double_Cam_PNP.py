@@ -90,11 +90,11 @@ cam2.set(cv2.CAP_PROP_CONTRAST, 32)
 def getTXTY(tvecX, tvecY, tvecZ, robo_relative_pose):
     ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
     tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
-    txdist = math.sqrt(tvecY**2 + tvecZ**2)
-    tydist = math.sqrt(tvecX**2 + tvecZ**2)
+   # txdist = math.sqrt(tvecY**2 + tvecZ**2)
+    #tydist = math.sqrt(tvecX**2 + tvecZ**2)
 
-    tx = math.atan((np.rad2deg(txdist * math.sin(tx + robo_relative_pose[2]) + robo_relative_pose[4])) / (txdist * math.cos(tx + robo_relative_pose[2]) + robo_relative_pose[3]))
-    ty = math.atan((np.rad2deg(tydist * math.sin(ty + robo_relative_pose[1]) + robo_relative_pose[4])) / (tydist * math.cos(ty + robo_relative_pose[1]) + robo_relative_pose[5]))
+    #tx = math.atan((np.rad2deg(txdist * math.sin(tx + robo_relative_pose[2]) + robo_relative_pose[4])) / (txdist * math.cos(tx + robo_relative_pose[2]) + robo_relative_pose[3]))
+    #ty = math.atan((np.rad2deg(tydist * math.sin(ty + robo_relative_pose[1]) + robo_relative_pose[4])) / (tydist * math.cos(ty + robo_relative_pose[1]) + robo_relative_pose[5]))
 
     return tx, ty
 

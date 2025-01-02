@@ -13,7 +13,7 @@ import argparse
 import constants
 import ntcore
 
-from TagObj import TagObj
+import WPIMath.geometry
 
 RAD2DEG = 180*pi
 
@@ -88,8 +88,17 @@ cam2.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 cam2.set(cv2.CAP_PROP_CONTRAST, 32)
 
 def getTXTY(tvecX, tvecY, tvecZ, robo_relative_pose):
-    ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
-    tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
+  #  ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
+   # tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
+
+    robotToCamera = geometry.Transform3d(geometry.Translation3d(), geometry.Rotation3d(0, 30, 35))
+
+    cameraToTagTransform = geometry.Transform3d(geometry.Translation3d(tvecX, tvecY, tvecZ), geometry.Rotation3d(0, 0, 0))
+
+    robotPose = Pose3d()
+
+    robotAngle = robotPose.transformBy(robotToCamera).transformBy(cameraToTagTransform)
+
    # txdist = math.sqrt(tvecY**2 + tvecZ**2)
     #tydist = math.sqrt(tvecX**2 + tvecZ**2)
 

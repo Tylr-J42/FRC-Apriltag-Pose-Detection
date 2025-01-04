@@ -119,17 +119,20 @@ def getTXTYCam2(tvecX, tvecY, tvecZ):
   #  ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
    # tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
 
-    robotToCamera = Transform3d(Translation3d(12.725, 2.19, 0), Rotation3d(np.deg2rad(0), np.deg2rad(30), np.deg2rad(-35)))
+    #robotToCamera = Pose3d(Translation3d(12.95, -2.19, 0), Rotation3d(np.deg2rad(0), np.deg2rad(-30), np.deg2rad(35)))
 
-    tagPose = Pose3d(Translation3d(tvecZ, tvecX, tvecY), Rotation3d(0,0,0))
+    robotToCamera = Pose3d(Translation3d(12.95, -2.19, 0), Rotation3d(np.deg2rad(180), np.deg2rad(-30), np.deg2rad(35)))
 
-    robotAngle = tagPose.transformBy(robotToCamera.inverse())
+    tagPose = Translation3d(tvecZ, tvecX, tvecY)
+
+    robotPose = robotToCamera.transformBy(Transform3d(tagPose, Rotation3d()))
 
     #robotAngle = robotPose.transformBy(robotToCamera).transformBy(cameraToTagTransform)
     
-    tx = np.rad2deg(math.atan(robotAngle.Y()/robotAngle.X()))
-    ty = np.rad2deg(math.atan(robotAngle.Z()/robotAngle.X()))
-    print(robotAngle.translation())
+    tx = np.rad2deg(math.atan(robotPose.Y()/robotPose.X()))
+    ty = np.rad2deg(math.atan(robotPose.Z()/robotPose.X()))
+    print(tvecX, tvecY, tvecZ)
+    print(robotPose.translation())
 
    # txdist = math.sqrt(tvecY**2 + tvecZ**2)
     #tydist = math.sqrt(tvecX**2 + tvecZ**2)

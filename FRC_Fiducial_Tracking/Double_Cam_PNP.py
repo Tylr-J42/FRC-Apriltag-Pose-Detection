@@ -13,7 +13,12 @@ import argparse
 import constants
 import ntcore
 
-import WPIMath.geometry
+from wpimath.geometry import Translation3d
+from wpimath.geometry import Transform3d
+from wpimath.geometry import Pose3d
+from wpimath.geometry import Rotation3d
+
+
 
 RAD2DEG = 180*pi
 
@@ -87,17 +92,44 @@ cam2.set(cv2.CAP_PROP_SHARPNESS, 3)
 cam2.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 cam2.set(cv2.CAP_PROP_CONTRAST, 32)
 
-def getTXTY(tvecX, tvecY, tvecZ, robo_relative_pose):
+def getTXTYCam1(tvecX, tvecY, tvecZ):
   #  ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
    # tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
 
-    robotToCamera = geometry.Transform3d(geometry.Translation3d(), geometry.Rotation3d(0, 30, 35))
+    robotToCamera = Transform3d(Translation3d(12.725, 2.19, 0), Rotation3d(np.deg2rad(0), np.deg2rad(30), np.deg2rad(35)))
 
-    cameraToTagTransform = geometry.Transform3d(geometry.Translation3d(tvecX, tvecY, tvecZ), geometry.Rotation3d(0, 0, 0))
+    cameraToTagTransform = Transform3d(Translation3d(tvecX, tvecY, tvecZ), Rotation3d(0, 0, 0))
 
     robotPose = Pose3d()
 
     robotAngle = robotPose.transformBy(robotToCamera).transformBy(cameraToTagTransform)
+    
+    tx = np.rad2deg(math.atan(robotAngle.Y()/robotAngle.X()))
+    ty = np.rad2deg(math.atan(robotAngle.Z()/robotAngle.X()))
+
+   # txdist = math.sqrt(tvecY**2 + tvecZ**2)
+    #tydist = math.sqrt(tvecX**2 + tvecZ**2)
+
+    #tx = math.atan((np.rad2deg(txdist * math.sin(tx + robo_relative_pose[2]) + robo_relative_pose[4])) / (txdist * math.cos(tx + robo_relative_pose[2]) + robo_relative_pose[3]))
+    #ty = math.atan((np.rad2deg(tydist * math.sin(ty + robo_relative_pose[1]) + robo_relative_pose[4])) / (tydist * math.cos(ty + robo_relative_pose[1]) + robo_relative_pose[5]))
+
+    return tx, ty
+
+def getTXTYCam2(tvecX, tvecY, tvecZ):
+  #  ty = np.rad2deg(math.atan(np.deg2rad(tvecY) / np.deg2rad(tvecZ)))
+   # tx = np.rad2deg(math.atan(np.deg2rad(tvecX) / np.deg2rad(tvecZ)))
+
+    robotToCamera = Transform3d(Translation3d(12.725, 2.19, 0), Rotation3d(np.deg2rad(0), np.deg2rad(30), np.deg2rad(-35)))
+
+    tagPose = Pose3d(Translation3d(tvecZ, tvecX, tvecY), Rotation3d(0,0,0))
+
+    robotAngle = tagPose.transformBy(robotToCamera.inverse())
+
+    #robotAngle = robotPose.transformBy(robotToCamera).transformBy(cameraToTagTransform)
+    
+    tx = np.rad2deg(math.atan(robotAngle.Y()/robotAngle.X()))
+    ty = np.rad2deg(math.atan(robotAngle.Z()/robotAngle.X()))
+    print(robotAngle.translation())
 
    # txdist = math.sqrt(tvecY**2 + tvecZ**2)
     #tydist = math.sqrt(tvecX**2 + tvecZ**2)
@@ -198,15 +230,15 @@ while True:
     data_array2, tags_detected2, image2 = detection_loop(output2, image2)
 
     for i in range(len(data_array1)):
-        tx, ty = getTXTY(data_array1[i][1][0], data_array1[i][1][1], data_array1[i][1][2], constants.cam1_robo_space_pose)
+        tx, ty = getTXTYCam1(data_array1[i][1][0], data_array1[i][1][1], data_array1[i][1][2])
         
-        if(data_array1[i].tag_id == 3):
+        if(data_array1[i][0] == 3):
             cam1tx3 = tx
             cam1ty3 = ty
             cam1_detected = True
     
     for i in range(len(data_array2)):
-        tx, ty = getTXTY(data_array2[i][1][0], data_array2[i][1][1], data_array2[i][1][2], constants.cam2_robo_space_pose)
+        tx, ty = getTXTYCam2(data_array2[i][1][0], data_array2[i][1][1], data_array2[i][1][2])
         
         if(data_array2[i][0] == 3):
             cam2tx3 = tx

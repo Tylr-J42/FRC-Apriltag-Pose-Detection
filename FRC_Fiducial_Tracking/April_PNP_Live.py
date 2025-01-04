@@ -13,7 +13,10 @@ import argparse
 import constants
 import ntcore
 
-from TagObj import TagObj
+from wpimath.geometry import Translation3d
+from wpimath.geometry import Transform3d
+from wpimath.geometry import Pose3d
+from wpimath.geometry import Rotation3d
 
 RAD2DEG = 180*pi
 
@@ -107,8 +110,16 @@ def tag_corners(tag_coords):
     return corners
 
 def getTXTY(tvecX, tvecY, tvecZ):
-    ty = np.rad2deg(math.atan(np.deg2rad(tvecY)/np.deg2rad(tvecZ))) + constants.robo_space_pose[1]
-    tx = np.rad2deg(math.atan(np.deg2rad(tvecX)/np.deg2rad(tvecZ))) + constants.robo_space_pose[2]
+    
+    robotToCamera = Pose3d(Translation3d(12.95, 2.19, 0), Rotation3d(np.deg2rad(180), np.deg2rad(-30), np.deg2rad(-35)))
+
+    tagPose = Translation3d(tvecZ, tvecX, tvecY)
+
+    robotPose = robotToCamera.transformBy(Transform3d(tagPose, Rotation3d()))
+    
+    tx = np.rad2deg(math.atan(robotPose.Y()/robotPose.X()))
+    ty = np.rad2deg(math.atan(robotPose.Z()/robotPose.X()))
+
     return tx, ty
 
 field_tag_coords = tag_corners(constants.tag_coords)
@@ -190,13 +201,13 @@ while True:
                 imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, constants.camera_matrix, constants.dist)
                 image = display_features(image, imgpts, totalDist)
 
-            data_array.append(TagObj(det.tag_id, tvecDist, rvecDeg, totalDist))
+            data_array.append((det.tag_id, tvecDist, rvecDeg, totalDist))
             tags_detected.append(det.tag_id)
     
     for i in range(len(data_array)):
-        tx, ty = getTXTY(data_array[i].tvec_x, data_array[i].tvec_y, data_array[i].tvec_z)
+        tx, ty = getTXTY(data_array[i][1][0], data_array[i][1][1], data_array[i][1][2])
         
-        if(data_array[i].tag_id == 3):
+        if(data_array[i][0] == 3):
             tx3 = tx
             ty3 = ty
 

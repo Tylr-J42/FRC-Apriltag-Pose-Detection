@@ -42,5 +42,6 @@ HORIZONTAL_FOV = 102
 # x,y,z,rx,ry,rz
 
 # for the offseason bot:
-cam1_robo_space_pose = [0.0, 30.0, 35.0, 12.725, 2.19, 0.0]
-cam2_robo_space_pose = [0.0, 30.0, -35.0, 12.725, -2.19, 0.0]
+# TODO: update constants for camera position
+cam_orange_robo_pose = [0.0, 30.0, 35.0, 12.725, 2.19, 0.0]
+cam_black_robo_pose = [0.0, 30.0, -35.0, 12.725, -2.19, 0.0]

@@ -90,9 +90,10 @@ cam2.set(cv2.CAP_PROP_SHARPNESS, 3)
 cam2.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 cam2.set(cv2.CAP_PROP_CONTRAST, 32)
 
+
 def getTXTYCam1(tvecX, tvecY, tvecZ):
 
-    robotToCamera = Pose3d(Translation3d(12.95, +2.19, 0), Rotation3d(np.deg2rad(180), np.deg2rad(-30), np.deg2rad(-35)))
+    robotToCamera = Pose3d(Translation3d(12.95, 2.19, 0), Rotation3d(np.deg2rad(180), np.deg2rad(-30), np.deg2rad(-35)))
 
     tagPose = Translation3d(tvecZ, tvecX, tvecY)
 

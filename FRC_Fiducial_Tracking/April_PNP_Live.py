@@ -59,6 +59,7 @@ inst.startClient4("client")
 inst.setServerTeam(2648)
 
 
+# set camera parameters
 cam = cv2.VideoCapture(2)
 
 cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -108,6 +109,24 @@ def tag_corners(tag_coords):
         corners.append(coordinates)
 
     return corners
+
+def findTagAngle(point):
+    undistorted_pointXY = cv2.undistortPoints(point, constants.camera_matrix)
+    horizontal_angle = ((undistorted_pointXY[0] - (constants.camera_res[0]/2)) / (constants.camera_res/2)) * (constants.HORIZONTAL_FOV/2)
+    vertical_angle = ((undistorted_pointXY[1] - constants.camera_res[1]/2) / (constants.camera_res/2)) * (constants.VERTICAL_FOV/2)
+
+    return (180, vertical_angle, horizontal_angle)
+
+
+def trig_3d_solver(center_coords, tvecs):
+    xyz_angle = findTagAngle(center_coords)
+    dist_3d = math.sqrt(tvecs[0]**2 + tvecs[1]**2 + tvecs[2]**2)
+
+    robotToCamera = Pose3d(Translation3d(constants.cam_orange_robo_pose[3], constants.cam_orange_robo_pose[4], constants.cam_orange_robo_pose[5]),
+                           Rotation3d(np.deg2rad(constants.cam_orange_robo_pose[0]), np.deg2rad(constants.cam_orange_robo_pose[1]), np.deg2rad(constants.cam_orange_robo_pose[2])))
+    
+    robotToTagPose = robotToCamera.transformBy(Transform3d(dist_3d, 0, 0), Rotation3d(np.rad2deg(xyz_angle[0]), np.rad2deg(xyz_angle[1]), np.rad2deg(xyz_angle[2])))
+
 
 def getTXTY(tvecX, tvecY, tvecZ):
     

@@ -66,20 +66,6 @@ inst.setServerTeam(2648)
 
 
 # set camera parameters
-cam = cv2.VideoCapture(2)
-
-cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)
-cam.set(cv2.CAP_PROP_FPS, 100.0)
-cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
-cam.set(cv2.CAP_PROP_EXPOSURE, 60)
-cam.set(cv2.CAP_PROP_SHARPNESS, 3)
-cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
-cam.set(cv2.CAP_PROP_CONTRAST, 32)
-
-
-'''
 cam = cv2.VideoCapture(0)
 
 cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -91,38 +77,35 @@ cam.set(cv2.CAP_PROP_EXPOSURE, 60)
 cam.set(cv2.CAP_PROP_SHARPNESS, 3)
 cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 cam.set(cv2.CAP_PROP_CONTRAST, 32)
+
+'''
+cam = cv2.VideoCapture(2)
+
+cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)
+cam.set(cv2.CAP_PROP_FPS, 100.0)
+cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
+cam.set(cv2.CAP_PROP_EXPOSURE, 60)
+cam.set(cv2.CAP_PROP_SHARPNESS, 3)
+cam.set(cv2.CAP_PROP_BRIGHTNESS, 0)
+cam.set(cv2.CAP_PROP_CONTRAST, 32)
 '''
 
-def tag_corners(tag_coords):
-    corners = []
-
-    for i in range(len(constants.tag_coords)):
-        x = tag_coords[i][1]
-        y = tag_coords[i][2]
-        z = tag_coords[i][3]
-        z_rotation = tag_coords[i][4]
-
-        coordinates = [[], [], [] ,[], []]
-
-        x_offset = (b/2)*math.cos(math.radians(z_rotation))
-        y_offset = (b/2)*math.sin(math.radians(z_rotation))
-        coordinates[0] = tag_coords[i][0]
-        coordinates[1] = [x-x_offset, y+y_offset, z+b/2]
-        coordinates[2] = [x+x_offset, y+y_offset, z+b/2]
-        coordinates[3] = [x+x_offset, y+y_offset, z-b/2]
-        coordinates[4] = [x-x_offset, y+y_offset, z-b/2]
-
-        corners.append(coordinates)
-
-    return corners
-
 def findTagAngle(point):
-    undistorted_pointXY = cv2.undistortPoints(point, constants.camera_matrix)
-    horizontal_angle = ((undistorted_pointXY[0] - (constants.camera_res[0]/2)) / (constants.camera_res/2)) * (constants.HORIZONTAL_FOV/2)
-    vertical_angle = ((undistorted_pointXY[1] - constants.camera_res[1]/2) / (constants.camera_res/2)) * (constants.VERTICAL_FOV/2)
+    undistorted_pointXY = cv2.undistortPoints(point, constants.camera_matrix, constants.dist, None, constants.camera_matrix, )[0][0]
+
+    center_vector = np.linalg.inv(constants.camera_matrix).dot(np.array([undistorted_pointXY[0], undistorted_pointXY[1], 1]).T)
+
+    horizontal_angle = np.rad2deg(math.atan(center_vector[0]))
+    vertical_angle = np.rad2deg(math.atan(center_vector[1]))
+    print("horizontal angle: " + str(horizontal_angle))
+    print("vertical angle: " + str(vertical_angle))
+
+    #horizontal_angle = ((undistorted_pointXY[0] - (constants.camera_res[0]/2)) / (constants.camera_res[0]/2)) * (constants.HORIZONTAL_FOV/2)
+    #vertical_angle = ((undistorted_pointXY[1] - constants.camera_res[1]/2) / (constants.camera_res[1]/2)) * (constants.VERTICAL_FOV/2)
 
     return (180, vertical_angle, horizontal_angle)
-
 
 def trig_3d_solver(center_coords, dist_3d):
     xyz_angle = findTagAngle(center_coords)
@@ -130,11 +113,9 @@ def trig_3d_solver(center_coords, dist_3d):
     robot_camera = Pose3d(Translation3d(constants.cam_orange_robo_pose[3], constants.cam_orange_robo_pose[4], constants.cam_orange_robo_pose[5]),
                            Rotation3d(np.deg2rad(constants.cam_orange_robo_pose[0]), np.deg2rad(constants.cam_orange_robo_pose[1]), np.deg2rad(constants.cam_orange_robo_pose[2])))
     
-    robot_tag_pose = robot_camera.transformBy(Transform3d(dist_3d, 0, 0), Rotation3d(np.rad2deg(xyz_angle[0]), np.rad2deg(xyz_angle[1]), np.rad2deg(xyz_angle[2])))
+    robot_tag_pose = robot_camera.transformBy(Transform3d(Translation3d(dist_3d, 0, 0), Rotation3d(np.rad2deg(xyz_angle[0]), np.rad2deg(xyz_angle[1]), np.rad2deg(xyz_angle[2]))))
 
     return robot_tag_pose.X(), robot_tag_pose.Y(), robot_tag_pose.Z()
-
-field_tag_coords = tag_corners(constants.tag_coords)
 
 def getTagCoords(tag_id):
     return constants.tag_coords[tag_id]
@@ -216,22 +197,20 @@ while True:
 
             data_array.append([det.tag_id, totalDist, det.center])
             tags_detected.append(det.tag_id)
-    
-    for i in range(len(data_array)):
 
-        if(len(data_array) == 1):
-            robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[2], data_array[1])
-            tracked_tag = data_array[i][0]
-        elif(len(data_array)):
-            closest_tag = 0
-            largest_dist = 0
-            # sort for the closest tag
-            for i in range(len(data_array)):
-                if(data_array[i][1] > largest_dist):
-                    closest_tag = data_array[i][0]
-            
-            robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[closest_tag][2], data_array[closest_tag][1])
-            tracked_tag = closest_tag
+    if(len(data_array) == 1):
+        robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[0][2], data_array[0][1])
+        tracked_tag = data_array[0][0]
+    elif(len(data_array)):
+        closest_tag_index = 0
+        largest_dist = 0
+        # sort for the closest tag
+        for i in range(len(data_array)):
+            if(data_array[i][1] > largest_dist):
+                closest_tag = i
+        
+        robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[closest_tag][2], data_array[closest_tag][1])
+        tracked_tag = data_array[closest_tag][0]
 
     #Showing image. use --display to show image
     if args.display:
@@ -254,4 +233,4 @@ while True:
         # frame rate for performance
         FPS = (1/(time.time()-frame_start))
         counter = 0
-        print(FPS)
+       # print(FPS)

@@ -44,17 +44,23 @@ objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2,
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
 
-tx3 = 0
-ty3 = 0
+tvec_x = 0
+tvec_y = 0
+tvec_z = 0
+tracked_tag = 0
 
 FPS = 0
 
 # network tables + RoboRio IP
 inst = ntcore.NetworkTableInstance.getDefault()
 vision_table = inst.getTable("Fiducial")
-tag3tx = vision_table.getDoubleTopic("tag3tx").publish()
-tag3ty = vision_table.getDoubleTopic("tag3ty").publish()
+
+tag_topic = vision_table.getDoubleTopic("tag_id").publish()
+tvec_x_topic = vision_table.getDoubleTopic("tag_tvec_x").publish()
+tvec_y_topic = vision_table.getDoubleTopic("tag_tvec_y").publish()
+tvec_z_topic = vision_table.getDoubleTopic("tag_tvec_z").publish()
 FPS_topic = vision_table.getDoubleTopic("fps").publish()
+
 inst.startClient4("client")
 inst.setServerTeam(2648)
 
@@ -118,9 +124,8 @@ def findTagAngle(point):
     return (180, vertical_angle, horizontal_angle)
 
 
-def trig_3d_solver(center_coords, tvecs):
+def trig_3d_solver(center_coords, dist_3d):
     xyz_angle = findTagAngle(center_coords)
-    dist_3d = math.sqrt(tvecs[0]**2 + tvecs[1]**2 + tvecs[2]**2)
 
     robot_camera = Pose3d(Translation3d(constants.cam_orange_robo_pose[3], constants.cam_orange_robo_pose[4], constants.cam_orange_robo_pose[5]),
                            Rotation3d(np.deg2rad(constants.cam_orange_robo_pose[0]), np.deg2rad(constants.cam_orange_robo_pose[1]), np.deg2rad(constants.cam_orange_robo_pose[2])))
@@ -128,19 +133,6 @@ def trig_3d_solver(center_coords, tvecs):
     robot_tag_pose = robot_camera.transformBy(Transform3d(dist_3d, 0, 0), Rotation3d(np.rad2deg(xyz_angle[0]), np.rad2deg(xyz_angle[1]), np.rad2deg(xyz_angle[2])))
 
     return robot_tag_pose.X(), robot_tag_pose.Y(), robot_tag_pose.Z()
-
-def getTXTY(tvecX, tvecY, tvecZ):
-    
-    robotToCamera = Pose3d(Translation3d(12.95, 2.19, 0), Rotation3d(np.deg2rad(180), np.deg2rad(-30), np.deg2rad(-35)))
-
-    tagPose = Translation3d(tvecZ, tvecX, tvecY)
-
-    robotPose = robotToCamera.transformBy(Transform3d(tagPose, Rotation3d()))
-    
-    tx = np.rad2deg(math.atan(robotPose.Y()/robotPose.X()))
-    ty = np.rad2deg(math.atan(robotPose.Z()/robotPose.X()))
-
-    return tx, ty
 
 field_tag_coords = tag_corners(constants.tag_coords)
 
@@ -188,8 +180,9 @@ while True:
     ret, image = cam.read()
     data_array = []
     tags_detected = []
-    tx3 = 0
-    ty3 = 0
+    tvec_x = 0
+    tvec_y = 0
+    tvec_z = 0
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -221,15 +214,24 @@ while True:
                 imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, constants.camera_matrix, constants.dist)
                 image = display_features(image, imgpts, totalDist)
 
-            data_array.append((det.tag_id, tvecDist, rvecDeg, totalDist))
+            data_array.append([det.tag_id, totalDist, det.center])
             tags_detected.append(det.tag_id)
     
     for i in range(len(data_array)):
-        tx, ty = getTXTY(data_array[i][1][0], data_array[i][1][1], data_array[i][1][2])
-        
-        if(data_array[i][0] == 3):
-            tx3 = tx
-            ty3 = ty
+
+        if(len(data_array) == 1):
+            robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[2], data_array[1])
+            tracked_tag = data_array[i][0]
+        elif(len(data_array)):
+            closest_tag = 0
+            largest_dist = 0
+            # sort for the closest tag
+            for i in range(len(data_array)):
+                if(data_array[i][1] > largest_dist):
+                    closest_tag = data_array[i][0]
+            
+            robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[closest_tag][2], data_array[closest_tag][1])
+            tracked_tag = closest_tag
 
     #Showing image. use --display to show image
     if args.display:
@@ -240,8 +242,10 @@ while True:
         if key ==ord("q"):
             break
 
-    tag3tx.set(tx3)
-    tag3ty.set(ty3)
+    tag_topic.set(tracked_tag)
+    tvec_x_topic.set(tvec_x)
+    tvec_y_topic.set(tvec_y)
+    tvec_z_topic.set(tvec_z)
 
     FPS_topic.set(FPS)
 

@@ -99,11 +99,8 @@ def findTagAngle(point):
 
     horizontal_angle = np.rad2deg(math.atan(center_vector[0]))
     vertical_angle = np.rad2deg(math.atan(center_vector[1]))
-    print("horizontal angle: " + str(horizontal_angle))
-    print("vertical angle: " + str(vertical_angle))
-
-    #horizontal_angle = ((undistorted_pointXY[0] - (constants.camera_res[0]/2)) / (constants.camera_res[0]/2)) * (constants.HORIZONTAL_FOV/2)
-    #vertical_angle = ((undistorted_pointXY[1] - constants.camera_res[1]/2) / (constants.camera_res[1]/2)) * (constants.VERTICAL_FOV/2)
+    #print("horizontal angle: " + str(horizontal_angle))
+    #print("vertical angle: " + str(vertical_angle))
 
     return (180, vertical_angle, horizontal_angle)
 
@@ -233,4 +230,4 @@ while True:
         # frame rate for performance
         FPS = (1/(time.time()-frame_start))
         counter = 0
-       # print(FPS)
+        print(FPS)

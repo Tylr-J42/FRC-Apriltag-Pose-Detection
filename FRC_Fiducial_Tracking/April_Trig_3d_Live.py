@@ -44,22 +44,42 @@ objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2,
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
 
-tvec_x = 0
-tvec_y = 0
-tvec_z = 0
+robot_tvec_x = 0
+robot_tvec_x = 0
+robot_tvec_x = 0
 tracked_tag = 0
 
 FPS = 0
 
-# network tables + RoboRio IP
-inst = ntcore.NetworkTableInstance.getDefault()
-vision_table = inst.getTable("Fiducial")
 
-tag_topic = vision_table.getDoubleTopic("tag_id").publish()
-tvec_x_topic = vision_table.getDoubleTopic("tag_tvec_x").publish()
-tvec_y_topic = vision_table.getDoubleTopic("tag_tvec_y").publish()
-tvec_z_topic = vision_table.getDoubleTopic("tag_tvec_z").publish()
-FPS_topic = vision_table.getDoubleTopic("fps").publish()
+if constants.camera_color == "orange":
+    # network tables + RoboRio IP
+    inst = ntcore.NetworkTableInstance.getDefault()
+    vision_table = inst.getTable("orange_Fiducial")
+
+    tag_topic = vision_table.getDoubleTopic("orangeClosestTag").publish()
+    tvec_x_topic = vision_table.getDoubleTopic("orangeRelativeX").publish()
+    tvec_y_topic = vision_table.getDoubleTopic("orangeRelativeY").publish()
+    tvec_z_topic = vision_table.getDoubleTopic("orangeRelativeZ").publish()
+
+    is_tag_detected = vision_table.getBooleanTopic("orangeTagDetected").publish()
+
+    FPS_topic = vision_table.getDoubleTopic("orangeFPS").publish()
+
+    
+elif constants.camera_color == "black":
+    # network tables + RoboRio IP
+    inst = ntcore.NetworkTableInstance.getDefault()
+    vision_table = inst.getTable("black_Fiducial")
+
+    tag_topic = vision_table.getDoubleTopic("blackClosestTag").publish()
+    tvec_x_topic = vision_table.getDoubleTopic("blackRelativeX").publish()
+    tvec_y_topic = vision_table.getDoubleTopic("blackRelativeY").publish()
+    tvec_z_topic = vision_table.getDoubleTopic("blackRelativeZ").publish()
+
+    is_tag_detected = vision_table.getBooleanTopic("blackTagDetected").publish()
+
+    FPS_topic = vision_table.getDoubleTopic("blackFPS").publish()
 
 inst.startClient4("client")
 inst.setServerTeam(2648)
@@ -114,12 +134,6 @@ def trig_3d_solver(center_coords, dist_3d):
 
     return robot_tag_pose.X(), robot_tag_pose.Y(), robot_tag_pose.Z()
 
-def getTagCoords(tag_id):
-    return constants.tag_coords[tag_id]
-
-def connectionListener(connected, info):
-    print(info, "; Connected=%s" % connected)
-
 # create overlay on camera feed
 def display_features(image, imgpts, totalDist):
     # making red lines around fiducial
@@ -158,9 +172,9 @@ while True:
     ret, image = cam.read()
     data_array = []
     tags_detected = []
-    tvec_x = 0
-    tvec_y = 0
-    tvec_z = 0
+    robot_tvec_x = 0
+    robot_tvec_x = 0
+    robot_tvec_x = 0
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -197,8 +211,9 @@ while True:
 
     if(len(data_array) == 1):
         robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[0][2], data_array[0][1])
+        print(findTagAngle(data_array[0][2]))
         tracked_tag = data_array[0][0]
-    elif(len(data_array)):
+    elif(len(data_array)>1):
         closest_tag_index = 0
         largest_dist = 0
         # sort for the closest tag
@@ -215,15 +230,17 @@ while True:
         cv2.imshow("Frame", image)
 
         key = cv2.waitKey(1) & 0xFF
-        if key ==ord("q"):
+        if key == ord("q"):
             break
 
     tag_topic.set(tracked_tag)
-    tvec_x_topic.set(tvec_x)
-    tvec_y_topic.set(tvec_y)
-    tvec_z_topic.set(tvec_z)
+    tvec_x_topic.set(robot_tvec_x)
+    tvec_y_topic.set(robot_tvec_x)
+    tvec_z_topic.set(robot_tvec_x)
 
     FPS_topic.set(FPS)
+
+    is_tag_detected.set(len(tags_detected) > 0)
 
     counter = counter+1
     if(counter==25):

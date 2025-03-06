@@ -33,6 +33,8 @@ camera_res = (1280, 800)
 VERTICAL_FOV = 67
 HORIZONTAL_FOV = 102
 
+camera_color = "orange"
+
 # for RPi Camera v3 Wide
 #VERTICAL_FOV = 67
 #HORIZONTAL_FOV = 102
@@ -43,5 +45,5 @@ HORIZONTAL_FOV = 102
 
 # for the offseason bot:
 # TODO: update constants for camera position
-cam_orange_robo_pose = [0.0, 30.0, 35.0, 12.725, 2.19, 0.0]
-cam_black_robo_pose = [0.0, 30.0, -35.0, 12.725, -2.19, 0.0]
+cam_orange_robo_pose = [0.0, 5.0, -10, 14.0-7.673, 1.05-14.0, 7.308+2.75]
+cam_black_robo_pose = [0.0, 5.0, -35.0, 14.0-7.673, 14.0-1.05, 7.308+2.75]

@@ -2,6 +2,7 @@
 # Made by Tyler Jacques FRC Team 2648
 # https://gitlab.coldlightalchemist.com/Tyler-J42/apriltag-pose-frc
 
+from os import close
 import time
 import cv2
 import dt_apriltags
@@ -10,6 +11,8 @@ from math import sqrt
 from math import pi
 import math
 import argparse
+
+from soupsieve import closest
 import constants
 import ntcore
 
@@ -44,9 +47,9 @@ objp = np.array([[0,0,0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, 0], [-b/2,
 # 2d axis array points for drawing cube overlay
 axis = np.array([[b/2, b/2, 0], [-b/2, b/2, 0], [-b/2, -b/2, 0], [b/2, -b/2, 0], [b/2, b/2, b], [-b/2, b/2, b], [-b/2, -b/2, b], [b/2, -b/2, b]], dtype=np.float32)
 
-robot_tvec_x = 0
-robot_tvec_x = 0
-robot_tvec_x = 0
+tx = 0
+ty = 0
+dist = 0
 tracked_tag = 0
 
 FPS = 0
@@ -58,9 +61,9 @@ if constants.camera_color == "orange":
     vision_table = inst.getTable("orange_Fiducial")
 
     tag_topic = vision_table.getDoubleTopic("orangeClosestTag").publish()
-    tvec_x_topic = vision_table.getDoubleTopic("orangeRelativeX").publish()
-    tvec_y_topic = vision_table.getDoubleTopic("orangeRelativeY").publish()
-    tvec_z_topic = vision_table.getDoubleTopic("orangeRelativeZ").publish()
+    tx_topic = vision_table.getDoubleTopic("tx").publish()
+    ty_topic = vision_table.getDoubleTopic("ty").publish()
+    total_dist_topic = vision_table.getDoubleTopic("totalDist").publish()
 
     is_tag_detected = vision_table.getBooleanTopic("orangeTagDetected").publish()
 
@@ -73,9 +76,9 @@ elif constants.camera_color == "black":
     vision_table = inst.getTable("black_Fiducial")
 
     tag_topic = vision_table.getDoubleTopic("blackClosestTag").publish()
-    tvec_x_topic = vision_table.getDoubleTopic("blackRelativeX").publish()
-    tvec_y_topic = vision_table.getDoubleTopic("blackRelativeY").publish()
-    tvec_z_topic = vision_table.getDoubleTopic("blackRelativeZ").publish()
+    tx_topic = vision_table.getDoubleTopic("tx").publish()
+    ty_topic = vision_table.getDoubleTopic("ty").publish()
+    total_dist_topic = vision_table.getDoubleTopic("totalDist").publish()
 
     is_tag_detected = vision_table.getBooleanTopic("blackTagDetected").publish()
 
@@ -172,9 +175,9 @@ while True:
     ret, image = cam.read()
     data_array = []
     tags_detected = []
-    robot_tvec_x = 0
-    robot_tvec_x = 0
-    robot_tvec_x = 0
+    tx = 0
+    ty = 0
+    dist = 0
 
     #detecting april tags
     tagFrame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -210,18 +213,21 @@ while True:
             tags_detected.append(det.tag_id)
 
     if(len(data_array) == 1):
-        robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[0][2], data_array[0][1])
-        print(findTagAngle(data_array[0][2]))
+        #robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[0][2], data_array[0][1])
+        fein, ty, tx = findTagAngle(data_array[0][2])
+        dist = data_array[0][1]
         tracked_tag = data_array[0][0]
     elif(len(data_array)>1):
-        closest_tag_index = 0
+        closest_tag = 0
         largest_dist = 0
         # sort for the closest tag
         for i in range(len(data_array)):
             if(data_array[i][1] > largest_dist):
                 closest_tag = i
         
-        robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[closest_tag][2], data_array[closest_tag][1])
+        #robot_tvec_x, robot_tvec_y, robot_tvec_z = trig_3d_solver(data_array[closest_tag][2], data_array[closest_tag][1])
+        fein, ty, tx = findTagAngle(data_array[closest_tag][2])
+        dist = data_array[closest_tag][1]
         tracked_tag = data_array[closest_tag][0]
 
     #Showing image. use --display to show image
@@ -234,9 +240,11 @@ while True:
             break
 
     tag_topic.set(tracked_tag)
-    tvec_x_topic.set(robot_tvec_x)
-    tvec_y_topic.set(robot_tvec_x)
-    tvec_z_topic.set(robot_tvec_x)
+    tx_topic.set(tx)
+    ty_topic.set(ty)
+    total_dist_topic.set(dist)
+
+   # print("robot tvec:", robot_tvec_x, robot_tvec_y, robot_tvec_z)
 
     FPS_topic.set(FPS)
 

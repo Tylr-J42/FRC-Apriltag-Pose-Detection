@@ -12,7 +12,6 @@ from math import pi
 import math
 import argparse
 
-from soupsieve import closest
 import constants
 import ntcore
 

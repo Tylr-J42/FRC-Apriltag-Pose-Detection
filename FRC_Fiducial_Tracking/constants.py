@@ -8,13 +8,13 @@ camera_matrix = np.array([[976.16482142,   0.,         771.05155174],
                 [  0.,           0.,           1.        ]])
 '''
 
-#for the Arducam OV9872 Camera
-camera_matrix = np.array([[935.58552861,   0.,         664.73887135],
-    [  0.,         932.27174304, 326.00933432],
-    [  0.,           0.,           1.        ]])
+#for the Arducam OV9872 Camera orange
+camera_matrix = np.array([[912.91589296,   0.,         705.22436474],
+ [  0.,         914.05652473, 364.61560638],
+ [  0. ,          0.,           1.,        ]])
 
 # for arducam OV9872 camrea
-dist = np.array([[-0.026375,    0.28978668, -0.00669531, -0.00973697, -0.48583437]])
+dist = np.array([[ 0.02808095,  0.01822137, -0.00086566,  0.00161964, -0.19848367]])
 
 # 2023 Field Apriltag Coordinates index = tag id
 # format = [id, x, y, z, z-rotation] in inches
@@ -46,4 +46,4 @@ camera_color = "orange"
 # for the offseason bot:
 # TODO: update constants for camera position
 cam_orange_robo_pose = [0.0, 5.0, -10, 14.0-7.673, 1.05-14.0, 7.308+2.75]
-cam_black_robo_pose = [0.0, 5.0, -35.0, 14.0-7.673, 14.0-1.05, 7.308+2.75]
+cam_black_robo_pose = [0.0, 5.0, 10, 14.0-7.673, 14.0-1.05, 7.308+2.75]

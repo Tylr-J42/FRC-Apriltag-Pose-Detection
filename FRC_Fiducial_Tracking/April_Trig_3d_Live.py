@@ -54,10 +54,10 @@ tracked_tag = 0
 
 FPS = 0
 
+inst = ntcore.NetworkTableInstance.getDefault()
 
 if constants.camera_color == "orange":
     # network tables + RoboRio IP
-    inst = ntcore.NetworkTableInstance.getDefault()
     vision_table = inst.getTable("orange_Fiducial")
 
     tag_topic = vision_table.getDoubleTopic("orangeClosestTag").publish()
@@ -72,7 +72,6 @@ if constants.camera_color == "orange":
     
 elif constants.camera_color == "black":
     # network tables + RoboRio IP
-    inst = ntcore.NetworkTableInstance.getDefault()
     vision_table = inst.getTable("black_Fiducial")
 
     tag_topic = vision_table.getDoubleTopic("blackClosestTag").publish()
@@ -243,6 +242,7 @@ while True:
     tx_topic.set(tx)
     ty_topic.set(ty)
     total_dist_topic.set(dist)
+    inst.flush()
 
    # print("robot tvec:", robot_tvec_x, robot_tvec_y, robot_tvec_z)
 
